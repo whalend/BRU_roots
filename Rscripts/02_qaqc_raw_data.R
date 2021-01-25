@@ -1,9 +1,12 @@
 ## Raw Minirhizotron Data QA/QC Checks
 ## Loads raw data combined into single file ('Rscripts/01_combine_raw_data.R')
-## Checks for duplicate observations and wildly outrageous values.
+## Checks for duplicate observations and extreme values.
+## Assessing dupes and extreme values requires heads-up checking of the photos
+## and processing - Stacy Smith
 
 library(tidyverse)
 library(readxl)
+
 # source("Rscripts/01_combine_raw_data.R")# outputs file at directory below
 df <- read_csv("data/raw_data/all_raw_observations.csv")
 
@@ -21,8 +24,13 @@ dupe_check <- function(df, write_path){
   else {
     ## Write data frame of duplicated observations to file
     df %>% filter(obs_ID %in% dup_oid$obs_ID) %>% 
+      arrange(obs_ID) %>% 
       write_csv(paste0(write_path, "duped_observations_", Sys.Date(), ".csv"))
-    print("Duplicate observations detected! Check 'duped_observations.csv'")
+    ## Print message informing of duped observations
+    print("Duplicate observations detected!")
+    print(paste0("Check ", write_path, "duped_observations_", Sys.Date(), 
+                 ".csv")
+      )
   }
   
   ## Exclude any duplicated observations from the data
@@ -32,6 +40,42 @@ dupe_check <- function(df, write_path){
   # return(df)
 }
 
+## Munge to 'long' format ####
+## Moves 'Alive', 'Dead', 'Gone' to a 'root_status' column, removing these as
+## the leads to the measurements columns.
+## Then removes the 0 values in the measurement columns.
+
+## not the mose efficient implementation...
+
+## Make separate data frames of Alive, Dead, Gone measurements
+
+munge_long <- function(df){
+  A = df %>% 
+    # filter(AliveLength_mm > 0) %>% 
+    select(-starts_with("Gone"), -starts_with("Dead")) %>% 
+    mutate(root_status = "Alive")
+  colnames(A) <- sub(c("Alive"), "", colnames(A))
+  
+  D = df %>% 
+    select(-starts_with("Gone"), -starts_with("Alive")) %>% 
+    mutate(root_status = "Dead")
+  colnames(D) <- sub(c("Dead"), "", colnames(D))
+  
+  G = df %>% 
+    select(-starts_with("Dead"), -starts_with("Alive")) %>% 
+    mutate(root_status = "Gone")
+  colnames(G) <- sub(c("Gone"), "", colnames(G))
+  
+  df = rbind(A,D,G)
+  df = df %>% filter(Length_mm > 0)
+  rm("A","D","G")
+  
+  return(df)
+}
+df <- munge_long(df)
+
+## Check for Duplicated Observation IDs 'obs_ID'
+## For 2020 data a root should have only one category
 w_path <- "QAQC_intermediates/"
 dupe_check(df, w_path)
 ## Send file of detected duplicates to Stacy for heads-up checking of photos
@@ -48,30 +92,22 @@ unique(del_dupes$notes)
 ## Filter to only the rows that need deleted
 del_dupes <- del_dupes %>% 
   filter(notes == "delete") %>% 
-  select(-"notes")
+  select(-"notes") %>% 
+  munge_long(.)
 
 ## Keep only the 'good' rows
 df <- anti_join(df, del_dupes)
 
-## Now should have no more duplicate observations
-dupe_check(df)
+## Ultimately should have no more duplicate observations
+## But this is iterative b/c not all data is present yet
+## Will need to rerun code above as new dupes and errors are found when 
+## new data is added. Then this below to see
+dupe_check(df, w_path)
 
 
-## Correct data for observations ####
-## One note: [3] "need to change data due to reconnecting broken segment link"
-## Stacy made a file with the correct data
-correct_data <- read_xlsx("QAQC_intermediates/correct data for root 6_16_30_R16.xlsx", sheet = 1) %>% 
-  select(-notes)
+## MAYBE MAKES SENSE TO SPLIT THIS INTO 2 or 3 SCRIPTS HERE ####
 
-df <- df %>% 
-  # First delete the observation(s)
-  filter(!obs_ID %in% correct_data$obs_ID) %>% 
-  # Then add the correct data
-  union_all(., correct_data)
-
-dupe_check(df)
-
-## Check range of values for 'Alive', 'Dead', 'Gone'
+## Check range of values for 'Alive', 'Dead', 'Gone' ####
 ## What are maximum acceptable root lengths within a location?
 ## If length is too long presumably SA, Volume, AvgDiam are also questionable
 df %>% 
@@ -84,3 +120,28 @@ df %>%
 ## send these data to Stacy to check if digitized values are correct
 
 
+## Corrected data for observations ####
+## One note: [3] "need to change data due to reconnecting broken segment link"
+## Stacy made a file with the correct data
+correct_data <- read_xlsx(
+  "QAQC_intermediates/correct data for root 6_16_30_R16.xlsx", sheet = 1) %>% 
+  select(-notes)
+
+correct_data <- rbind(
+  correct_data,
+  read_csv("QAQC_intermediates/Alive_over_40mm_corrected.csv") %>% 
+    select(-notes)
+  )
+
+df <- df %>% 
+  # First delete the observation(s)
+  filter(!obs_ID %in% correct_data$obs_ID) %>% 
+  # Then add the correct data
+  union_all(., correct_data)
+
+dupe_check(df)
+
+
+
+
+# write_csv(df, "data/processed_data/corrected_no_dupes.csv")

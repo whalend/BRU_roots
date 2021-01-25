@@ -27,8 +27,8 @@ summary(df)
 
 df$SampleId[1:5]
 n_distinct(df$SampleId)
-## Appears to be picture file name. Repeated for roots; may be unique for 
-## location.
+## Appears to be picture file name.
+## Repeated for roots; may be unique for location.
 
 unique(df$ROOT)# delete because they are all roots
 unique(df$RootName)# "Root ID" that is only unique to tube and location
