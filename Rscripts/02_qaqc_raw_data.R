@@ -23,14 +23,16 @@ dupe_check <- function(df, write_path){
   }
   else {
     ## Write data frame of duplicated observations to file
-    df %>% filter(obs_ID %in% dup_oid$obs_ID) %>% 
-      arrange(obs_ID) %>% 
+    duped = df %>% filter(obs_ID %in% dup_oid$obs_ID) %>% 
+      arrange(obs_ID)
+    duped %>% 
       write_csv(paste0(write_path, "duped_observations_", Sys.Date(), ".csv"))
     ## Print message informing of duped observations
     print("Duplicate observations detected!")
     print(paste0("Check ", write_path, "duped_observations_", Sys.Date(), 
                  ".csv")
       )
+    return(duped)
   }
   
   ## Exclude any duplicated observations from the data
@@ -77,35 +79,8 @@ df <- munge_long(df)
 ## Check for Duplicated Observation IDs 'obs_ID'
 ## For 2020 data a root should have only one category
 w_path <- "QAQC_intermediates/"
-dupe_check(df, w_path)
+dupes <- dupe_check(df, w_path)
 ## Send file of detected duplicates to Stacy for heads-up checking of photos
-
-## Load checked duplicates file from Stacy
-## Downloaded from Teams
-## 2021-01-25
-del_dupes <- read_csv("QAQC_intermediates/duped_observations_SAScomments.csv")
-## Check 'notes' values to clue in on anything other than deleting rows
-unique(del_dupes$notes)
-# [3] "need to change data due to reconnecting broken segment link"
-## deal with this one next
-
-## Filter to only the rows that need deleted
-del_dupes <- del_dupes %>% 
-  filter(notes == "delete") %>% 
-  select(-"notes") %>% 
-  munge_long(.)
-
-## Keep only the 'good' rows
-df <- anti_join(df, del_dupes)
-
-## Ultimately should have no more duplicate observations
-## But this is iterative b/c not all data is present yet
-## Will need to rerun code above as new dupes and errors are found when 
-## new data is added. Then this below to see
-dupe_check(df, w_path)
-
-
-## MAYBE MAKES SENSE TO SPLIT THIS INTO 2 or 3 SCRIPTS HERE ####
 
 ## Check range of values for 'Alive', 'Dead', 'Gone' ####
 ## What are maximum acceptable root lengths within a location?
@@ -120,18 +95,30 @@ df %>%
 ## send these data to Stacy to check if digitized values are correct
 
 
-## Corrected data for observations ####
-## One note: [3] "need to change data due to reconnecting broken segment link"
-## Stacy made a file with the correct data
-correct_data <- read_xlsx(
-  "QAQC_intermediates/correct data for root 6_16_30_R16.xlsx", sheet = 1) %>% 
-  select(-notes)
+## Make Data Corrections ####
+## Load checked duplicates file from Stacy
+## Downloaded from Teams
+qaqc_data <- read_xlsx("QAQC_intermediates/QAQC_notes_corr.xlsx", sheet = 1)
+unique(qaqc_data$note)
 
-correct_data <- rbind(
-  correct_data,
-  read_csv("QAQC_intermediates/Alive_over_40mm_corrected.csv") %>% 
-    select(-notes)
-  )
+## Check 'notes' values to clue in on anything other than deleting rows
+unique(qaqc_data$note)
+# [3] "need to change data due to reconnecting broken segment link"
+## deal with this one next
+
+## Filter to duped rows that simply need deleted
+del_dupes <- qaqc_data %>% 
+  filter(note == "delete") %>% 
+  select(-note)
+
+## Keep only the 'good' rows
+df <- anti_join(df, del_dupes)# drops rows in 'del_dupes'
+
+
+## Correct data for erroneous observations ####
+## Stacy made a sheet with corrected data, handling extreme values and any
+## errors discovered while checking the duplicated 'obs_ID'
+correct_data <- read_xlsx("QAQC_intermediates/QAQC_notes_corr.xlsx", sheet = 2)
 
 df <- df %>% 
   # First delete the observation(s)
@@ -139,9 +126,65 @@ df <- df %>%
   # Then add the correct data
   union_all(., correct_data)
 
-dupe_check(df)
+## Ultimately should have no more duplicate observations, but this is iterative
+## b/c not all data is present yet. Will need to rerun code above when new data
+## is added.
+dupe_check(df, w_path)
 
 
+## Correct Nonsensical Status Changes ####
+
+## Find status changes
+df2 <- df %>% 
+  select(root_ID, root_status, Session:DeathSession, Length_mm, Date, obs_ID,
+         SampleId) %>% 
+  arrange(root_ID, Session) %>% 
+  group_by(root_ID) %>% 
+  mutate(flag = case_when(
+    # captures changing from Dead/Gone to Alive - zombies or wanderers
+    root_status %in% c("Dead","Gone") & lead(root_status == "Alive") ~ "bad",
+    # also need change from Gone to anything - wanderers
+    root_status == "Gone" & lead(root_status %in% c("Alive", "Dead")) ~ "bad",
+    TRUE ~ "good"
+    ) 
+  )
+
+b <- df2 %>% filter(flag=="bad")
+b <- b$root_ID
+
+df2 %>% 
+  filter(root_ID%in%b) %>% 
+  select(flag, everything()) %>% 
+  writexl::write_xlsx(., "QAQC_intermediates/zombies_wanderers.xlsx")
+  # write_csv(., "QAQC_intermediates/zombies_wanderers.csv")
+
+d <- df2 %>% 
+  mutate(root_status = case_when(
+    root_status %in% c('Dead', 'Gone') & lead(root_status == 'Alive') ~ 'Alive',
+    # also need change from Gone to anything - wanderers
+    root_status == 'Gone' & lead(root_status %in% c('Alive', 'Dead')) ~ lead(root_status),
+    TRUE ~ root_status
+    ),
+    flag = case_when(
+      # captures changing from Dead/Gone to Alive - zombies or wanderers
+      root_status %in% c("Dead","Gone") & lead(root_status == "Alive") ~ "bad",
+      # also need change from Gone to anything - wanderers
+      root_status == "Gone" & lead(root_status %in% c("Alive", "Dead")) ~ "bad",
+      TRUE ~ "good"
+    )
+  )
+b <- d %>% filter(flag=="bad")
+b <- b$root_ID
+
+d %>% filter(root_ID%in%b) %>% 
+  select(flag, everything()) %>% 
+  View()
+
+## Add Date formatting ####
+df <- df %>% 
+  mutate(Date = lubridate::as_date(Date),
+         Month = lubridate::month(Date, label = TRUE))
 
 
-# write_csv(df, "data/processed_data/corrected_no_dupes.csv")
+## Export Corrected Data ####
+# write_csv(df, "data/processed_data/mr_data_corrected.csv")
