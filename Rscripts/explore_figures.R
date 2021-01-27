@@ -7,35 +7,12 @@
 library(tidyverse)
 source("Rscripts/02_qaqc_raw_data.R")
 
-df <- no_dupes %>% 
-  select(-Time, -DataGatherer, -starts_with("Tot"), -TipDiam:-Altitude) %>% 
-  mutate(Date = lubridate::as_date(Date),
-         Month = lubridate::month(Date, label = TRUE))
-  
 
-
-
-A <- df %>% 
-  # filter(AliveLength_mm > 0) %>% 
-  select(obs_ID:DeathSession, Month, starts_with("Alive")) %>% 
-  mutate(RootStatus = "Alive")
-colnames(A) <- sub(c("Alive"), "", colnames(A))
-
-D <- df %>% 
-  select(obs_ID:DeathSession, Month, starts_with("Dead")) %>% 
-  mutate(RootStatus = "Dead")
-colnames(D) <- sub(c("Dead"), "", colnames(D))
-
-G <- df %>% 
-  select(obs_ID:DeathSession, Month, starts_with("Gone")) %>% 
-  mutate(RootStatus = "Gone")
-colnames(G) <- sub(c("Gone"), "", colnames(G))
-
-df2 <- rbind(A,D,G)
 
 
 ## Make size class groupings of root length
 df2 <- df2 %>% 
+  filter(Length_mm > 0) %>% 
   mutate(length_bin = 
            case_when(
              Length_mm < 1 ~ "<1 mm",
@@ -54,6 +31,8 @@ df2 <- df2 %>%
                              ">4 - 5 mm", ">5 - 6 mm", ">6 - 7 mm", ">7 - 8 mm",
                              ">8 - 9 mm", ">9 - 10 mm", ">10 mm"))
   )
+
+
 
 ggplot(df2 %>% filter(Length_mm>0), aes(length_bin, fill = RootStatus)) +
   geom_bar(position = "dodge") +
