@@ -22,7 +22,7 @@ df <- read_csv("data/processed_data/mr_roots_data_corrected.csv")
 2. Length, Production, Turnover by Day of Year (Month)
 
 
-```{r add size class groupings}
+```{r add class groupings}
 ## Make size class groupings of root length
 df <- df %>% 
   # group_by(root_status) %>% 
@@ -51,6 +51,7 @@ df <- df %>%
 
 
 # Individual roots
+
 
 ## Number of roots across length bins
 
@@ -121,6 +122,8 @@ ggplot(df, aes(Location*-1, Length_mm)) +
     panel.grid.minor = element_blank()
     )
 ```
+
+
 
 # Root length summed to depth ("location")
 
