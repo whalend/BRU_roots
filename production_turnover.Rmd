@@ -1,0 +1,152 @@
+---
+title: "Root production and turnover"
+output: github_document
+---
+<!-- ## GitHub Documents -->
+
+<!-- This is an R Markdown format used for publishing markdown documents to GitHub. When you click the **Knit** button all R code chunks are run and a markdown file (.md) suitable for publishing to GitHub is generated. -->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+```{r load packages and data}
+library(tidyverse)
+df <- read_csv("data/processed_data/mr_roots_data_corrected.csv")
+```
+
+# Generate figures
+
+1. Length, Production, Turnover by Depth
+
+2. Length, Production, Turnover by Day of Year (Month)
+
+
+```{r add size class groupings}
+## Make size class groupings of root length
+df <- df %>% 
+  # group_by(root_status) %>% 
+  mutate(length_bin = 
+           case_when(
+             Length_mm < 1 ~ "<1 mm",
+             between(Length_mm, 1, 3) ~ "1 - 3 mm",
+             between(Length_mm, 3.0001, 5) ~ ">3 - 5 mm",
+             between(Length_mm, 5.0001, 7) ~ ">5 - 7 mm",
+             between(Length_mm, 7.0001, 9) ~ ">7 - 9 mm",
+             between(Length_mm, 9.0001, 11) ~ ">9 - 11 mm",
+             between(Length_mm, 11.0001, 13) ~ ">11 - 13 mm",
+             between(Length_mm, 13.0001, 15) ~ ">13 - 15 mm",
+             # between(Length_mm, 8.0001, 9) ~ ">8 - 9 mm",
+             # between(Length_mm, 9.0001, 10) ~ ">9 - 10 mm",
+             Length_mm > 15 ~ ">15 mm"
+           ) %>% 
+           factor(levels = c("<1 mm","1 - 3 mm", ">3 - 5 mm", ">5 - 7 mm", 
+                             ">7 - 9 mm", ">9 - 11 mm", ">11 - 13 mm", 
+                             ">13 - 15 mm", 
+                             # ">8 - 9 mm", 
+                             # ">9 - 10 mm", 
+                             ">15 mm"))
+  )
+```
+
+
+# Individual roots
+
+## Number of roots across length bins
+
+```{r root_length_bins}
+
+ggplot(df, aes(length_bin, fill = root_status)) +
+  geom_bar(position = "dodge") +
+  xlab("") +
+  ylab("Observation count") +
+  theme_minimal() +
+  theme(legend.position = c(.8, .8),
+        legend.title = element_blank(),
+        panel.grid.minor = element_blank())
+```
+
+
+```{r density_plot_root_length}
+ggplot(df) +
+  geom_density(aes(Length_mm, color = root_status)) +
+  scale_x_continuous(breaks = c(seq(0,10, 2), 10, 20, 30, 40, 50, 60),
+                     labels = c(seq(0,10, 2), 10, 20, 30, 40, 50, 60),
+                     expand = c(.01,.01)) +
+  scale_y_continuous(expand = c(.001,.001)) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        # legend.title = element_blank(),
+        panel.grid.minor = element_blank())
+```
+
+
+## Root length by depth, month, and status
+
+```{r root_length_depth_month}
+ggplot(df, aes(Location*-1, Length_mm)) +
+  geom_point(alpha = .2) +
+  # stat_summary(fun.data = "mean_se", color = "deepskyblue", size = .2) +
+  geom_smooth(method = "gam") +
+  coord_flip() +
+  facet_grid(Month ~ root_status) +
+  xlab("Relative depth") +
+  ylab("Root length (mm)") +
+  theme_bw() +
+  theme(
+    # legend.position = c(.8, .8),
+    # legend.title = element_blank(),
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank()
+    )
+```
+
+
+## Average root length by depth, month, and status
+
+```{r avg_root_length_depth_month}
+ggplot(df, aes(Location*-1, Length_mm)) +
+  # geom_point(alpha = .2) +
+  stat_summary(fun.data = "mean_se", color = "deepskyblue", size = .2) +
+  geom_smooth() +
+  coord_flip() +
+  facet_grid(Month ~ root_status) +
+  xlab("Relative depth") +
+  ylab("Average root length (mm)") +
+  theme_bw() +
+  theme(
+    # legend.position = c(.8, .8),
+    # legend.title = element_blank(),
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank()
+    )
+```
+
+# Root length summed to depth ("location")
+
+```{r agg_to_depth}
+df2 <- df %>% 
+  group_by(Tube, Location, root_status, Month, Date) %>% 
+  summarise(Length_mm = sum(Length_mm)) %>% 
+  ungroup(.) %>% 
+  select(Length_mm, everything())
+```
+
+```{r total_root_length_depth_month}
+ggplot(df2, aes(Location*-1, Length_mm)) +
+  geom_point(alpha = .2) +
+  # stat_summary(fun.data = "mean_se", color = "deepskyblue", size = .2) +
+  geom_smooth(method = "gam") +
+  coord_flip() +
+  facet_grid(Month ~ root_status) +
+  xlab("Relative depth") +
+  ylab("Total root length (mm)") +
+  theme_bw() +
+  theme(
+    # legend.position = c(.8, .8),
+    # legend.title = element_blank(),
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank()
+    )
+```
+
