@@ -119,6 +119,8 @@ df <- anti_join(df, del_dupes)# drops rows in 'del_dupes'
 ## Stacy made a sheet with corrected data, handling extreme values and any
 ## errors discovered while checking the duplicated 'obs_ID'
 correct_data <- read_xlsx("QAQC_intermediates/QAQC_notes_corr.xlsx", sheet = 2)
+correct_data <- correct_data %>% 
+  select(-corr_date)
 
 df <- df %>% 
   # First delete the observation(s)
@@ -130,6 +132,14 @@ df <- df %>%
 ## b/c not all data is present yet. Will need to rerun code above when new data
 ## is added.
 dupe_check(df, w_path)
+
+## Add Date formatting ####
+df <- df %>% 
+  mutate(Date = lubridate::as_date(Date),
+         Month = lubridate::month(Date))
+
+## Export Corrected Data ####
+# write_csv(df, "data/processed_data/mr_roots_data_corrected.csv")
 
 
 ## Correct Nonsensical Status Changes ####
@@ -179,12 +189,3 @@ b <- b$root_ID
 d %>% filter(root_ID%in%b) %>% 
   select(flag, everything()) %>% 
   View()
-
-## Add Date formatting ####
-df <- df %>% 
-  mutate(Date = lubridate::as_date(Date),
-         Month = lubridate::month(Date, label = TRUE))
-
-
-## Export Corrected Data ####
-# write_csv(df, "data/processed_data/mr_data_corrected.csv")
