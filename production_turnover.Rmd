@@ -15,7 +15,9 @@ library(tidyverse)
 df <- read_csv("data/processed_data/mr_roots_data_corrected.csv")
 ```
 
-# Generate figures
+CW: use MR + models to get at dynamic rates with depth, and static cores to get biomass/length with depth, then propagate them together to get summed fluxes of production and turnover.
+
+#  Figures
 
 1. Length, Production, Turnover by Depth
 
@@ -54,9 +56,9 @@ df <- df %>%
 
 
 ## Number of roots across length bins
+add diameter bins
 
 ```{r root_length_bins}
-
 ggplot(df, aes(length_bin, fill = root_status)) +
   geom_bar(position = "dodge") +
   xlab("") +
@@ -66,6 +68,8 @@ ggplot(df, aes(length_bin, fill = root_status)) +
         legend.title = element_blank(),
         panel.grid.minor = element_blank())
 ```
+
+
 
 
 ```{r density_plot_root_length}
@@ -105,6 +109,10 @@ ggplot(df, aes(Location*-1, Length_mm)) +
 
 ## Average root length by depth, month, and status
 
+Add diameter and volume measurements
+
+Add figure of medians, mode, explore using standard deviation
+
 ```{r avg_root_length_depth_month}
 ggplot(df, aes(Location*-1, Length_mm)) +
   # geom_point(alpha = .2) +
@@ -124,6 +132,23 @@ ggplot(df, aes(Location*-1, Length_mm)) +
 ```
 
 
+```{r avg_root_length_depth_month}
+ggplot(df, aes(Location*-1, Length_mm)) +
+  # geom_point(alpha = .2) +
+  stat_summary(fun.data = "mean_se", color = "deepskyblue", size = .2) +
+  geom_smooth() +
+  coord_flip() +
+  facet_grid(Month ~ root_status) +
+  xlab("Relative depth") +
+  ylab("Average root length (mm)") +
+  theme_bw() +
+  theme(
+    # legend.position = c(.8, .8),
+    # legend.title = element_blank(),
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank()
+    )
+```
 
 # Root length summed to depth ("location")
 
@@ -153,3 +178,4 @@ ggplot(df2, aes(Location*-1, Length_mm)) +
     )
 ```
 
+It develops mid-section girth - a beer belly - over the season.
