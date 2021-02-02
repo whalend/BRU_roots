@@ -5,14 +5,11 @@
 # 2. Length, Production, Turnover by Day of Year
 
 library(tidyverse)
-source("Rscripts/02_qaqc_raw_data.R")
-
-
-
+df <- read_csv("data/processed_data/mr_roots_data_corrected.csv")
 
 ## Make size class groupings of root length
-df2 <- df2 %>% 
-  filter(Length_mm > 0) %>% 
+df <- df %>% 
+  # group_by(root_status) %>% 
   mutate(length_bin = 
            case_when(
              Length_mm < 1 ~ "<1 mm",
@@ -34,29 +31,22 @@ df2 <- df2 %>%
 
 
 
-ggplot(df2 %>% filter(Length_mm>0), aes(length_bin, fill = RootStatus)) +
-  geom_bar(position = "dodge") +
+ggplot(df, aes(length_bin, Length_mm, fill = root_status)) +
+  geom_col(position = "dodge") +
   theme_minimal()
 
-ggplot(df2 %>% filter(Length_mm>0)) +
-  geom_density(aes(Length_mm, color = RootStatus)) +
+ggplot(df) +
+  geom_density(aes(Length_mm, color = root_status)) +
   scale_x_continuous(breaks = c(seq(0,10, 2), 10, 20, 30, 40, 50, 60),
                      labels = c(seq(0,10, 2), 10, 20, 30, 40, 50, 60),
                      expand = c(.01,.01)) +
   scale_y_continuous(expand = c(.001,.001)) +
   theme_minimal()
 
-ggplot(df2 %>% filter(), aes(Location*-1, AliveLength_mm)) +
+ggplot(df, aes(Location*-1, Length_mm) +
   geom_point(alpha = .2) +
-  stat_summary(fun.data = "mean_se", color = "deepskyblue", size = .3) +
+  # stat_summary(fun.data = "mean_se", color = "deepskyblue", size = .2) +
+  geom_smooth() +
   coord_flip() +
-  facet_wrap(~Month)
-
-alive_no_dupes %>% 
-  group_by(Location, Month) %>% 
-  summarise(Total_Length_mm = sum(AliveLength_mm),
-            Ave_Length_mm = mean(AliveLength_mm)) %>% 
-  ggplot(., aes())
-
-
-
+  facet_grid(~root_status) +
+  xlab("Relative depth")
