@@ -8,6 +8,7 @@ output: github_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(fig.height = 8, fig.width = 6)
 ```
 
 ```{r load packages and data}
@@ -19,12 +20,12 @@ CW: use MR + models to get at dynamic rates with depth, and static cores to get 
 
 #  Figures
 
-1. Length, Production, Turnover by Depth
+1. Length, Diameter, Production, Turnover by Depth
 
-2. Length, Production, Turnover by Day of Year (Month)
+2. Length, Diameter, Production, Turnover by Day of Year (Month)
 
 
-```{r add class groupings}
+```{r add length and diam class groupings}
 ## Make size class groupings of root length
 df <- df %>% 
   # group_by(root_status) %>% 
@@ -49,44 +50,103 @@ df <- df %>%
                              # ">9 - 10 mm", 
                              ">15 mm"))
   )
+  
+df <- df %>% mutate(
+  diam_bin = case_when(
+    AvgDiam_cm < 1 ~ "<1 cm",
+    between(AvgDiam_cm, 1, 1.5) ~ "1 - 1.5 cm",
+    between(AvgDiam_cm, 1.5001, 2) ~ ">1.5 - 2 cm",
+    between(AvgDiam_cm, 2.0001, 2.5) ~ ">2 - 2.5 cm",
+    between(AvgDiam_cm, 2.5001, 3) ~ ">2.5 - 3 cm",
+    between(AvgDiam_cm, 3.0001, 3.5) ~ ">3 - 3.5 cm",
+    between(AvgDiam_cm, 3.5001, 4) ~ ">3.5 - 4 cm",
+    between(AvgDiam_cm, 4.0001, 4.5) ~ ">4 - 4.5 cm",
+    between(AvgDiam_cm, 4.5001, 5) ~ ">4.5 - 5 cm",
+    between(AvgDiam_cm, 5.0001, 5.5) ~ ">5 - 5.5 cm",
+    between(AvgDiam_cm, 5.5001, 6) ~ ">5.5 - 6 cm",
+    AvgDiam_cm > 6 ~ ">6 cm"
+    ) %>% 
+    factor(levels = c(
+      "<1 cm",
+      "1 - 1.5 cm", 
+      ">1.5 - 2 cm", 
+      ">2 - 2.5 cm",
+      ">2.5 - 3 cm",
+      ">3 - 3.5 cm",
+      ">3.5 - 4 cm",
+      ">4 - 4.5 cm",
+      ">4.5 - 5 cm",
+      ">5 - 5.5 cm",
+      ">5.5 - 6 cm",
+      ">6 cm"))
+  )
 ```
 
 
-# Individual roots
-
-
 ## Number of roots across length bins
-add diameter bins
+<!-- add diameter bins -->
 
-```{r root_length_bins}
-ggplot(df, aes(length_bin, fill = root_status)) +
+```{r bins_length_diam_fig, fig.height=6, fig.width=8}
+length_bins <- ggplot(df, aes(length_bin, fill = root_status)) +
   geom_bar(position = "dodge") +
-  xlab("") +
+  scale_y_continuous(expand = c(0,0)) +
+  xlab("Root length bin") +
   ylab("Observation count") +
   theme_minimal() +
   theme(legend.position = c(.8, .8),
         legend.title = element_blank(),
         panel.grid.minor = element_blank())
+length_bins
+
+diam_bins <- ggplot(df, aes(diam_bin, fill = root_status)) +
+  geom_bar(position = "dodge") +
+  scale_y_continuous(expand = c(0,0)) +
+  xlab("Root diameter bin") +
+  ylab("Observation count") +
+  theme_minimal() +
+  theme(legend.position = c(.8, .8),
+        legend.title = element_blank(),
+        panel.grid.minor = element_blank())
+diam_bins
+
+# ggpubr::ggarrange(
+#   length_bins + theme(legend.position = "none"), 
+#   diam_bins + ylab(" ")
+# )
 ```
 
 
-
-
-```{r density_plot_root_length}
-ggplot(df) +
+```{r density_plot_length_diam, fig.height=6, fig.width=6}
+length_dens <- ggplot(df) +
   geom_density(aes(Length_mm, color = root_status)) +
   scale_x_continuous(breaks = c(seq(0,10, 2), 10, 20, 30, 40, 50, 60),
                      labels = c(seq(0,10, 2), 10, 20, 30, 40, 50, 60),
                      expand = c(.01,.01)) +
   scale_y_continuous(expand = c(.001,.001)) +
+  xlab("Root length (mm)") +
   theme_minimal() +
   theme(legend.position = "none",
         # legend.title = element_blank(),
         panel.grid.minor = element_blank())
+length_dens
+
+diam_dens <- ggplot(df) +
+  geom_density(aes(AvgDiam_cm, color = root_status)) +
+  scale_x_continuous(breaks = c(seq(0,5, 1), 10, 20),
+                     labels = c(seq(0,5, 1), 10, 20),
+                     expand = c(.01,.01)) +
+  scale_y_continuous(expand = c(.001,.001)) +
+  xlab("Average root diameter (cm)") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        # legend.title = element_blank(),
+        panel.grid.minor = element_blank())
+diam_dens
 ```
 
 
-## Root length by depth, month, and status
+## Individual roots
+Plotted metrics by depth, month, and status
 
 ```{r root_length_depth_month}
 ggplot(df, aes(Location*-1, Length_mm)) +
@@ -106,17 +166,41 @@ ggplot(df, aes(Location*-1, Length_mm)) +
     )
 ```
 
+```{r diameter_depth_month}
+ggplot(df, aes(Location*-1, AvgDiam_cm)) +
+  geom_point(alpha = .2) +
+  # stat_summary(fun.data = "mean_se", color = "deepskyblue", size = .2) +
+  geom_smooth(method = "gam") +
+  coord_flip() +
+  facet_grid(Month ~ root_status) +
+  xlab("Relative depth") +
+  ylab("Root diameter") +
+  theme_bw() +
+  theme(
+    # legend.position = c(.8, .8),
+    # legend.title = element_blank(),
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank()
+    )
+```
 
-## Average root length by depth, month, and status
 
-Add diameter and volume measurements
 
-Add figure of medians, mode, explore using standard deviation
+## Averaged individual root measurements
 
-```{r avg_root_length_depth_month}
+Root length, diameter, and volume by depth, month, and status.
+
+Points are means, blue error bars are standard errors, red are 95% CI. Both calculated using `stat_summary()` implementation. The line is the fit from `geom_smooth(method = 'gam', formula = 'y ~ s(x, bs="cs)')`, the default action in this case.
+
+<!-- Add figure of medians, mode, explore using standard deviation -->
+
+```{r avg_length_depth_month}
 ggplot(df, aes(Location*-1, Length_mm)) +
   # geom_point(alpha = .2) +
+  # stat_summary(fun.data = "median_hilow", color = "red", size = .2) +
+  stat_summary(fun.data = "mean_cl_boot", color = "red", size = .2) +
   stat_summary(fun.data = "mean_se", color = "deepskyblue", size = .2) +
+  # stat_summary(fun = "median", color = "deepskyblue", size = .2) +
   geom_smooth() +
   coord_flip() +
   facet_grid(Month ~ root_status) +
@@ -131,16 +215,18 @@ ggplot(df, aes(Location*-1, Length_mm)) +
     )
 ```
 
-
-```{r avg_root_length_depth_month}
-ggplot(df, aes(Location*-1, Length_mm)) +
-  # geom_point(alpha = .2) +
+```{r avg_diam_depth_month}
+ggplot(df, aes(Location*-1, AvgDiam_cm)) +
+  # geom_point(alpha = .05) +
+  # stat_summary(fun.data = "mean_sdl", color = "red", size = .2, fun.args = list(mult=1)) +
+  stat_summary(fun.data = "mean_cl_boot", color = "red", size = .2) +
   stat_summary(fun.data = "mean_se", color = "deepskyblue", size = .2) +
+  # stat_summary(fun = median, geom = "point", color = "red", size = .1) +
   geom_smooth() +
   coord_flip() +
   facet_grid(Month ~ root_status) +
   xlab("Relative depth") +
-  ylab("Average root length (mm)") +
+  ylab("Average root diameter (cm)") +
   theme_bw() +
   theme(
     # legend.position = c(.8, .8),
@@ -150,14 +236,48 @@ ggplot(df, aes(Location*-1, Length_mm)) +
     )
 ```
 
-# Root length summed to depth ("location")
+```{r avg_volume_depth_month}
+ggplot(df, aes(Location*-1, Volume_mm3)) +
+  # geom_point(alpha = .05) +
+  # stat_summary(fun.data = "mean_sdl", color = "red", size = .2, fun.args = list(mult=1)) +
+  stat_summary(fun.data = "mean_cl_boot", color = "red", size = .2) +
+  stat_summary(fun.data = "mean_se", color = "deepskyblue", size = .2) +
+  # stat_summary(fun = median, geom = "point", color = "red", size = .1) +
+  geom_smooth() +
+  coord_flip() +
+  facet_grid(Month ~ root_status) +
+  xlab("Relative depth") +
+  ylab("Average root volume (mm3)") +
+  theme_bw() +
+  theme(
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank()
+    )
+```
+
+# Root measures aggregated to depth ("location")
+The sum of each metric was calculated at each combination of Tube, Location (depth), Month & Date (equivalent but keeping Date handy), and root_status.
+
+In the plots, points are the sum values and lines are the fit from `geom_smooth(method = 'gam', formula = 'y ~ s(x, bs="cs)')`, same as above.
+
+We have totals for:
+
+- root length (mm)
+- projected area (mm2)
+- surface area (mm2)
+- average diameter (cm)
+- volume (mm3)
 
 ```{r agg_to_depth}
 df2 <- df %>% 
   group_by(Tube, Location, root_status, Month, Date) %>% 
-  summarise(Length_mm = sum(Length_mm)) %>% 
-  ungroup(.) %>% 
-  select(Length_mm, everything())
+  summarise(Length_mm = sum(Length_mm),
+            ProjArea_mm2 = sum(ProjArea_mm2),
+            SurfArea_mm2 = sum(SurfArea_mm2),
+            AvgDiam_cm_sum = sum(AvgDiam_cm),# should this be averaged instead?
+            AvgDiam_cm_avg = mean(AvgDiam_cm),
+            Volume_mm3 = sum(Volume_mm3)) %>% 
+  ungroup(.)
 ```
 
 ```{r total_root_length_depth_month}
@@ -178,4 +298,65 @@ ggplot(df2, aes(Location*-1, Length_mm)) +
     )
 ```
 
-It develops mid-section girth - a beer belly - over the season.
+"It develops mid-section girth - a beer belly - over the season" -CW :)
+
+```{r total_avg_diam}
+ggplot(df2, aes(Location*-1, AvgDiam_cm_sum)) +
+  geom_point(alpha = .2) +
+  geom_smooth(method = "gam") +
+  coord_flip() +
+  facet_grid(Month ~ root_status) +
+  xlab("Relative depth") +
+  ylab("Total mean diameter (cm)") +
+  theme_bw() +
+  theme(
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank()
+    )
+```
+
+```{r total_surface_area}
+ggplot(df2, aes(Location*-1, SurfArea_mm2)) +
+  geom_point(alpha = .2) +
+  geom_smooth(method = "gam") +
+  coord_flip() +
+  facet_grid(Month ~ root_status) +
+  xlab("Relative depth") +
+  ylab("Total surface area (mm2)") +
+  theme_bw() +
+  theme(
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank()
+    )
+```
+
+```{r total_proj_area}
+ggplot(df2, aes(Location*-1, ProjArea_mm2)) +
+  geom_point(alpha = .2) +
+  geom_smooth(method = "gam") +
+  coord_flip() +
+  facet_grid(Month ~ root_status) +
+  xlab("Relative depth") +
+  ylab("Total projected area (mm2)") +
+  theme_bw() +
+  theme(
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank()
+    )
+```
+
+```{r total_volume}
+ggplot(df2, aes(Location*-1, Volume_mm3)) +
+  geom_point(alpha = .2) +
+  geom_smooth(method = "gam") +
+  coord_flip() +
+  facet_grid(Month ~ root_status) +
+  xlab("Relative depth") +
+  ylab("Total volume (mm3)") +
+  theme_bw() +
+  theme(
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank()
+    )
+```
+
