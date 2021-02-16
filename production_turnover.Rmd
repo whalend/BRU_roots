@@ -1,6 +1,8 @@
 ---
 title: "Root production and turnover"
-output: github_document
+output: 
+  github_document:
+    toc: yes
 ---
 <!-- ## GitHub Documents -->
 
@@ -18,12 +20,86 @@ df <- read_csv("data/processed_data/mr_roots_data_corrected.csv")
 
 CW: use MR + models to get at dynamic rates with depth, and static cores to get biomass/length with depth, then propagate them together to get summed fluxes of production and turnover.
 
+What changes happen in gross production and turnover?
+
+Need to work on flagging zombies & wanderers
+
+# Calculating Estimates of Root Production and Turnover
+<!-- Milchunas (2009): "good agreement between pulse-isotope turnover and minirhizotron were obtained when minirhizotron estimates were *calculated from regression of decomposition versus production to equilibrium* and when pulse-isotope turnover estimates were calculated from two-phase life-span  regressions." -->
+
+Turnover = entering decomposition, sloughing of roots ("gone"); deposition into the soil
+
+  - individual present then gone (restrictive)
+  - individual present but lost size (length and/or diameter; use volume? mass)
+
+Split turnover into 2 parts
+
+Alive --> Dead = senescence
+Alive or Dead --> Gone = turnover (decomposition)
+
+Alive to gone = senescence + turnover? (but wanderers)
+ 
+ or
+
+Force "dead" before it can be "gone" for turnover definition? Stronger confidence that it is truly gone into decomposition and turnover rather than wanderer.
+
+We can infer that "Gone" roots reappearing as "Alive" later were "Alive" in between observations, but what about the hidden wanderers, those that haven't reappeared yet?  (Have yet to take any action related to this; all observations are treated as-is)
+
+Rate/ratio of alive to dead at time t or time t to time t-1
+
+Rate of production of "alive" roots
+
+***New production & new loss for each root, then aggregate to the frame***
+
+Calculate gross change for individual roots in length, diameter, and volume between each time step, for alive, dead, gone. The change values can then be aggregated to the depth window.
+
+- flag completely new and totally gone?
+
+Balogianni et al. (2016): "**Root production** was defined as the sum of the length of new roots formed and any increase in length of existing roots since the previous sampling day (Johnson et al. 2001). **Root mortality** was defined as the sum of the length of roots that had disappeared and any decrease in length of existing roots since the previous sampling day. Root production and mortality for each interval was expressed as the average meters of root length that appeared or disappeared per square meter image area per day (m m−2 days−1) in each tube."
+
+Number of new root IDs since initiation in April
+ 
+```{r new roots since April}
+# df %>% distinct(root_ID)
+
+april_roots <- df %>% 
+  filter(Month == 4) 
+new_roots <- df %>% 
+  filter(Month > 4) %>% 
+  filter(!root_ID %in% april_roots$root_ID)
+
+# print(paste("April roots:", nrow(april_roots)))
+# print(paste("Total new roots:", new_roots %>% distinct(root_ID) %>% nrow()))
+```
+
+April roots: `r nrow(april_roots)`
+
+New roots: `r new_roots %>% distinct(root_ID) %>% nrow()`
+
+That's more new root IDs than I thought there would be.
+
+<!-- ## Analyzing individual roots -->
+<!-- Rate of appearance in dead and gone column of individual roots -->
+
+<!-- Individual roots days to senescence (dead) or turnover (gone) -->
+
+<!-- Kaplan-Meier or Cox proportional hazard regression -->
+
+<!-- - days to event (senescence or turnover) for individual roots -->
+<!-- - 30-day step -->
+
+<!-- Kaplan-Meier: estimate median survivorship/longevity of individual or cohort. "Censoring" for alive/dead - roots still alive at end of period results in underestimates longevity. -->
+
+<!-- Cox: estimate "death hazard" at any given time in relation to other covariates -->
+
 #  Figures
 
 1. Length, Diameter, Production, Turnover by Depth
 
 2. Length, Diameter, Production, Turnover by Day of Year (Month)
 
+
+<!-- Size (diameter) & depth biplot of days to senescence -->
 
 ```{r add length and diam class groupings}
 ## Make size class groupings of root length
@@ -82,8 +158,222 @@ df <- df %>% mutate(
   )
 ```
 
+## Production and loss (change) of individual roots
+Calculate gross change for individual roots in length, diameter, and volume between each time step, for alive, dead, gone. The change values can then be aggregated to the depth window.
 
-## Number of roots across length bins
+```{r individual_root_changes, echo=TRUE}
+## Calculate change in length, diameter, and volume between each observation 
+## for each root
+ind_chg <- df %>% 
+  select(obs_ID, root_ID, Tube, Location, Date, Session, Month, root_status, 
+         Length_mm, AvgDiam_cm, Volume_mm3) %>% 
+  arrange(root_ID, Session) %>% 
+  group_by(root_ID, root_status, Tube, Location) %>% 
+  # lag subtracts the previous value; NAs when there is no value to subtract
+  mutate(length_change = Length_mm - lag(Length_mm, n = 1),
+         diam_change = AvgDiam_cm - lag(AvgDiam_cm, n = 1),
+         volume_change = Volume_mm3 - lag(Volume_mm3, n = 1)) %>% 
+  ungroup(.)
+
+## Sum change values to depth window
+ind_chg_sum <- ind_chg %>% 
+  group_by(Tube, Location, root_status, Month, Date) %>% 
+  summarise(Length_mm = sum(Length_mm),
+            AvgDiam_cm_sum = sum(AvgDiam_cm),# should this be averaged instead?
+            Volume_mm3 = sum(Volume_mm3),
+            length_change = sum(length_change, na.rm = T),
+            diam_change = sum(diam_change, na.rm = T),
+            volume_change = sum(volume_change, na.rm = T)
+  ) %>% 
+  ungroup(.)
+
+```
+
+The next three figures are of change values aggregated to depth window.
+
+```{r plot_root_change}
+# ind_chg %>% 
+#   group_by(root_status) %>% 
+#   select(length_change:volume_change) %>% 
+#   skimr::skim()
+# 
+# ind_chg %>% view
+# 
+# ind_chg %>% 
+#   filter(Tube == 12, Location == 39) %>% 
+#   ggplot() +
+#   geom_point(aes(Month, diam_change, color = root_ID, shape = root_status))
+
+## Individual roots
+# ggplot(ind_chg, aes(Location*-1, diam_change)) +
+#   geom_point(alpha = .1) +
+#   # stat_summary(fun.data = "mean_cl_boot", color = "red", size = .2) +
+#   stat_summary(fun.data = "mean_se", color = "deepskyblue", size = .2) +
+#   # stat_summary(fun = "median", color = "deepskyblue", size = .2) +
+#   geom_smooth() +
+#   coord_flip() +
+#   facet_grid(Month ~ root_status) +
+#   xlab("Relative depth") +
+#   ylab("Change in average diameter (cm)") +
+#   theme_bw() +
+#   theme(
+#     # legend.position = c(.8, .8),
+#     # legend.title = element_blank(),
+#     strip.background = element_blank(),
+#     panel.grid.minor = element_blank()
+#     )
+
+ggplot(ind_chg_sum, aes(Location*-1, length_change, color = root_status)) +
+  geom_point(alpha = .2, size = .5) +
+  geom_smooth(method = "gam", size = .5) +
+  coord_flip() +
+  facet_grid(Month ~ root_status) +
+  xlab("Relative depth") +
+  # ylab("Total change in mean diameter (cm)") +
+  theme_bw() +
+  theme(
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank()
+    )
+
+ggplot(ind_chg_sum, aes(Location*-1, diam_change, color = root_status)) +
+  geom_point(alpha = .2, size = .5) +
+  geom_smooth(method = "gam", size = .5) +
+  coord_flip() +
+  facet_grid(Month ~ root_status) +
+  xlab("Relative depth") +
+  # ylab("Total change in mean diameter (cm)") +
+  theme_bw() +
+  theme(
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank()
+    )
+
+ggplot(ind_chg_sum, aes(Location*-1, volume_change, color = root_status)) +
+  geom_point(alpha = .2, size = .5) +
+  geom_smooth(method = "gam", size = .5) +
+  coord_flip() +
+  facet_grid(Month ~ root_status) +
+  xlab("Relative depth") +
+  # ylab("Total change in mean diameter (cm)") +
+  theme_bw() +
+  theme(
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank()
+    )
+
+```
+
+## Root measurements aggregated to depth window ("location")
+The sum of each metric was calculated at each combination of Tube, Location (depth), Month & Date (equivalent but keeping Date handy), and root_status.
+
+In the plots, points are the sum values and lines are the fit from `geom_smooth(method = 'gam', formula = 'y ~ s(x, bs="cs)')`.
+
+We have totals for:
+
+- root length (mm)
+- projected area (mm2)
+- surface area (mm2)
+- average diameter (cm)
+- volume (mm3)
+
+```{r agg_to_depth}
+df2 <- df %>% 
+  group_by(Tube, Location, root_status, Month, Date) %>% 
+  summarise(Length_mm = sum(Length_mm),
+            ProjArea_mm2 = sum(ProjArea_mm2),
+            SurfArea_mm2 = sum(SurfArea_mm2),
+            AvgDiam_cm_sum = sum(AvgDiam_cm),# should this be averaged instead?
+            AvgDiam_cm_avg = mean(AvgDiam_cm),
+            Volume_mm3 = sum(Volume_mm3)) %>% 
+  ungroup(.)
+```
+
+```{r total_root_length_depth_month}
+ggplot(df2, aes(Location*-1, Length_mm)) +
+  geom_point(alpha = .2) +
+  # stat_summary(fun.data = "mean_se", color = "deepskyblue", size = .2) +
+  geom_smooth(method = "gam") +
+  coord_flip() +
+  facet_grid(Month ~ root_status) +
+  xlab("Relative depth") +
+  ylab("Total root length (mm)") +
+  theme_bw() +
+  theme(
+    # legend.position = c(.8, .8),
+    # legend.title = element_blank(),
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank()
+    )
+```
+
+"It develops mid-section girth - a beer belly - over the season" -CW :)
+
+```{r total_avg_diam}
+ggplot(df2, aes(Location*-1, AvgDiam_cm_sum)) +
+  geom_point(alpha = .2) +
+  geom_smooth(method = "gam") +
+  coord_flip() +
+  facet_grid(Month ~ root_status) +
+  xlab("Relative depth") +
+  ylab("Total mean diameter (cm)") +
+  theme_bw() +
+  theme(
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank()
+    )
+```
+
+```{r total_volume}
+ggplot(df2, aes(Location*-1, Volume_mm3)) +
+  geom_point(alpha = .2) +
+  geom_smooth(method = "gam") +
+  coord_flip() +
+  facet_grid(Month ~ root_status) +
+  xlab("Relative depth") +
+  ylab("Total volume (mm3)") +
+  theme_bw() +
+  theme(
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank()
+    )
+```
+
+
+<!-- Are these surface area estimates of current interest? -->
+```{r total_surface_area, eval=F}
+ggplot(df2, aes(Location*-1, SurfArea_mm2)) +
+  geom_point(alpha = .2) +
+  geom_smooth(method = "gam") +
+  coord_flip() +
+  facet_grid(Month ~ root_status) +
+  xlab("Relative depth") +
+  ylab("Total surface area (mm2)") +
+  theme_bw() +
+  theme(
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank()
+    )
+```
+
+```{r total_proj_area, eval=F}
+ggplot(df2, aes(Location*-1, ProjArea_mm2)) +
+  geom_point(alpha = .2) +
+  geom_smooth(method = "gam") +
+  coord_flip() +
+  facet_grid(Month ~ root_status) +
+  xlab("Relative depth") +
+  ylab("Total projected area (mm2)") +
+  theme_bw() +
+  theme(
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank()
+    )
+```
+
+
+## Number of roots across size bins
+
 <!-- add diameter bins -->
 
 ```{r bins_length_diam_fig, fig.height=6, fig.width=8}
@@ -91,7 +381,8 @@ length_bins <- ggplot(df, aes(length_bin, fill = root_status)) +
   geom_bar(position = "dodge") +
   scale_y_continuous(expand = c(0,0)) +
   xlab("Root length bin") +
-  ylab("Observation count") +
+  ylab("Root count") +
+  facet_grid(Month~.) +
   theme_minimal() +
   theme(legend.position = c(.8, .8),
         legend.title = element_blank(),
@@ -102,7 +393,8 @@ diam_bins <- ggplot(df, aes(diam_bin, fill = root_status)) +
   geom_bar(position = "dodge") +
   scale_y_continuous(expand = c(0,0)) +
   xlab("Root diameter bin") +
-  ylab("Observation count") +
+  ylab("Root count") +
+  facet_grid(Month~.) +
   theme_minimal() +
   theme(legend.position = c(.8, .8),
         legend.title = element_blank(),
@@ -254,109 +546,3 @@ ggplot(df, aes(Location*-1, Volume_mm3)) +
     panel.grid.minor = element_blank()
     )
 ```
-
-# Root measures aggregated to depth ("location")
-The sum of each metric was calculated at each combination of Tube, Location (depth), Month & Date (equivalent but keeping Date handy), and root_status.
-
-In the plots, points are the sum values and lines are the fit from `geom_smooth(method = 'gam', formula = 'y ~ s(x, bs="cs)')`, same as above.
-
-We have totals for:
-
-- root length (mm)
-- projected area (mm2)
-- surface area (mm2)
-- average diameter (cm)
-- volume (mm3)
-
-```{r agg_to_depth}
-df2 <- df %>% 
-  group_by(Tube, Location, root_status, Month, Date) %>% 
-  summarise(Length_mm = sum(Length_mm),
-            ProjArea_mm2 = sum(ProjArea_mm2),
-            SurfArea_mm2 = sum(SurfArea_mm2),
-            AvgDiam_cm_sum = sum(AvgDiam_cm),# should this be averaged instead?
-            AvgDiam_cm_avg = mean(AvgDiam_cm),
-            Volume_mm3 = sum(Volume_mm3)) %>% 
-  ungroup(.)
-```
-
-```{r total_root_length_depth_month}
-ggplot(df2, aes(Location*-1, Length_mm)) +
-  geom_point(alpha = .2) +
-  # stat_summary(fun.data = "mean_se", color = "deepskyblue", size = .2) +
-  geom_smooth(method = "gam") +
-  coord_flip() +
-  facet_grid(Month ~ root_status) +
-  xlab("Relative depth") +
-  ylab("Total root length (mm)") +
-  theme_bw() +
-  theme(
-    # legend.position = c(.8, .8),
-    # legend.title = element_blank(),
-    strip.background = element_blank(),
-    panel.grid.minor = element_blank()
-    )
-```
-
-"It develops mid-section girth - a beer belly - over the season" -CW :)
-
-```{r total_avg_diam}
-ggplot(df2, aes(Location*-1, AvgDiam_cm_sum)) +
-  geom_point(alpha = .2) +
-  geom_smooth(method = "gam") +
-  coord_flip() +
-  facet_grid(Month ~ root_status) +
-  xlab("Relative depth") +
-  ylab("Total mean diameter (cm)") +
-  theme_bw() +
-  theme(
-    strip.background = element_blank(),
-    panel.grid.minor = element_blank()
-    )
-```
-
-```{r total_surface_area}
-ggplot(df2, aes(Location*-1, SurfArea_mm2)) +
-  geom_point(alpha = .2) +
-  geom_smooth(method = "gam") +
-  coord_flip() +
-  facet_grid(Month ~ root_status) +
-  xlab("Relative depth") +
-  ylab("Total surface area (mm2)") +
-  theme_bw() +
-  theme(
-    strip.background = element_blank(),
-    panel.grid.minor = element_blank()
-    )
-```
-
-```{r total_proj_area}
-ggplot(df2, aes(Location*-1, ProjArea_mm2)) +
-  geom_point(alpha = .2) +
-  geom_smooth(method = "gam") +
-  coord_flip() +
-  facet_grid(Month ~ root_status) +
-  xlab("Relative depth") +
-  ylab("Total projected area (mm2)") +
-  theme_bw() +
-  theme(
-    strip.background = element_blank(),
-    panel.grid.minor = element_blank()
-    )
-```
-
-```{r total_volume}
-ggplot(df2, aes(Location*-1, Volume_mm3)) +
-  geom_point(alpha = .2) +
-  geom_smooth(method = "gam") +
-  coord_flip() +
-  facet_grid(Month ~ root_status) +
-  xlab("Relative depth") +
-  ylab("Total volume (mm3)") +
-  theme_bw() +
-  theme(
-    strip.background = element_blank(),
-    panel.grid.minor = element_blank()
-    )
-```
-
