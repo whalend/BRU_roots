@@ -133,7 +133,11 @@ ind_chg <- df %>%
          volume_change = Volume_mm3 - lag(Volume_mm3, n = 1)) %>% 
   ungroup(.)
 
+<<<<<<< HEAD
 ## Not a very elegant solution follows...
+=======
+## Not a very elegant solution
+>>>>>>> 0813c9017b62b1b1eabb73d1fcaa6fd1d74056fb
 ind_gross_chg <- ind_chg %>% 
   # select(-Length_mm:-Volume_mm3) %>%
   rename(length = length_change, diameter = diam_change, 

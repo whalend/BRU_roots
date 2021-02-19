@@ -281,6 +281,11 @@ ind_chg_sum <- ind_chg %>%
   ungroup(.)
 ```
 
+<<<<<<< HEAD
+=======
+
+Figure of gross gain and gross loss aggregated to depth window.
+>>>>>>> 0813c9017b62b1b1eabb73d1fcaa6fd1d74056fb
 
 Figure of gross gain and gross loss aggregated to depth window.
 
