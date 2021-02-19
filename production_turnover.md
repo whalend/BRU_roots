@@ -108,9 +108,20 @@ Calculate gross change for individual roots in length, diameter, and
 volume between each time step, for alive, dead, gone. The change values
 can then be aggregated to the depth window.
 
+<!-- CW: I think the main change is that we need to separate out the gains and losses. So, ind_gain_sum should actually be split into gross gain and gross loss. Then, the next step is to add new roots into the gross gain, and add newly dead or gone roots to the gross loss. -->
+<!-- After doing that, we aggregate to each depth window, but now have gross production and gross turnover by window. -->
+<!-- Is "gross loss" then the sum of 'Dead', 'Gone' and negative values of 'Alive'? -->
+
+**Gross Gain** = growth of existing roots + new roots
+
+**Gross Loss** = loss of existing roots + dead roots + gone roots
+
 ``` r
-## Calculate change in length, diameter, and volume between each observation 
-## for each root
+## Calculate gross gain and gross loss in length, diameter, and
+## volume between each observation for each root
+
+# calculate change of individual roots
+## given the definition of gross gain & loss could do only 'Alive'
 ind_chg <- df %>% 
   select(obs_ID, root_ID, Tube, Location, Date, Session, Month, root_status, 
          Length_mm, AvgDiam_cm, Volume_mm3) %>% 
@@ -122,22 +133,87 @@ ind_chg <- df %>%
          volume_change = Volume_mm3 - lag(Volume_mm3, n = 1)) %>% 
   ungroup(.)
 
-## Sum change values to depth window
-ind_chg_sum <- ind_chg %>% 
-  group_by(Tube, Location, root_status, Month, Date) %>% 
-  summarise(Length_mm = sum(Length_mm),
-            AvgDiam_cm_sum = sum(AvgDiam_cm),# should this be averaged instead?
-            Volume_mm3 = sum(Volume_mm3),
-            length_change = sum(length_change, na.rm = T),
-            diam_change = sum(diam_change, na.rm = T),
-            volume_change = sum(volume_change, na.rm = T)
-  ) %>% 
+## Not a very elegant solution
+ind_gross_chg <- ind_chg %>% 
+  # select(-Length_mm:-Volume_mm3) %>%
+  rename(length = length_change, diameter = diam_change, 
+         volume = volume_change) %>% 
+  # long format to use metric as grouping variable
+  pivot_longer(length:volume)
+
+# gross gain = growth of 'Alive' + new roots
+growth <- ind_gross_chg %>% 
+  # summarise growth of existing roots to each depth
+  filter(root_status == 'Alive', value >= 0) %>% 
+  group_by(Tube, Location, Month, name) %>% 
+  summarise(root_growth = sum(value)) %>% 
   ungroup(.)
+# summary(growth)
+
+# New roots after April
+new_roots <- ind_gross_chg %>%
+  # only roots that have NA for the change value
+  filter(Month > 4, root_status == 'Alive', is.na(value)) %>% 
+  distinct(root_ID, Tube, Location, Month) %>% 
+  # get only these root IDs & recombine with gross values
+  left_join(., ind_chg %>% select(root_ID, Tube, Location, Month, Length_mm:Volume_mm3)) %>%
+  # rename in prep for joining with 'growth' data frame
+  rename(length = Length_mm, diameter = AvgDiam_cm, 
+         volume = Volume_mm3) %>%
+  # match data format of 'growth'
+  pivot_longer(length:volume) %>% 
+  group_by(Tube, Location, Month, name) %>% 
+  summarise(new_roots = sum(value)) %>% 
+  ungroup(.)
+# join growth with new roots
+gain_depth <- left_join(growth, new_roots)
+# add growth & new roots to get gross gain
+gain_depth <- gain_depth %>% 
+  mutate(
+    # hacky solve of NAs from the join
+    new_roots = ifelse(is.na(new_roots), 0, new_roots),
+    gross_gain = root_growth + new_roots
+    )
+
+# gross loss = loss in 'Alive' + 'Dead' + 'Gone' 
+# get loss in 'Alive' roots (analogous to 'growth')
+loss <- ind_gross_chg %>%
+  filter(root_status == 'Alive' & value < 0) %>% 
+  group_by(Tube, Location, Month, name) %>% 
+  summarise(root_loss = sum(abs(value))) %>% 
+  ungroup(.)
+
+# get amounts *newly* 'Dead' and 'Gone' roots (analogous to new_roots)
+dead_gone <- ind_gross_chg %>%
+  # only Dead & Gone roots that have NA for the change value
+  filter(Month > 4, root_status %in% c('Dead', 'Gone'),
+         is.na(value)) %>% 
+  # get only these root IDs & recombine with gross values
+  distinct(root_ID, Tube, Location, Month) %>% 
+  left_join(., ind_chg %>% select(root_ID, Tube, Location, Month, Length_mm:Volume_mm3)) %>%
+  rename(length = Length_mm, diameter = AvgDiam_cm,
+         volume = Volume_mm3) %>%
+  pivot_longer(length:volume) %>% 
+  group_by(Tube, Location, Month, name) %>% 
+  summarise(dg_roots = sum(value)) %>% 
+  ungroup(.)
+
+loss_depth <- left_join(dead_gone, loss)
+loss_depth <- loss_depth %>% 
+  mutate(root_loss = ifelse(is.na(root_loss), 0, root_loss),
+    gross_loss = dg_roots + root_loss)
+
+# Combine so that gross gain and gross loss are in one data frame
+gross_change <- df %>%
+  filter(Month > 4) %>% 
+  distinct(Tube, Location, Month) %>% 
+  left_join(., gain_depth) %>% 
+  left_join(., loss_depth)
 ```
 
-The next three figures are of change values aggregated to depth window.
+Figure of gross gain and gross loss aggregated to depth window.
 
-![](production_turnover_files/figure-gfm/plot_root_change-1.png)<!-- -->![](production_turnover_files/figure-gfm/plot_root_change-2.png)<!-- -->![](production_turnover_files/figure-gfm/plot_root_change-3.png)<!-- -->
+![](production_turnover_files/figure-gfm/plot_root_change-1.png)<!-- -->
 
 ## Root measurements aggregated to depth window (“location”)
 
