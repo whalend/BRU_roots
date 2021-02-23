@@ -281,11 +281,6 @@ ind_chg_sum <- ind_chg %>%
   ungroup(.)
 ```
 
-<<<<<<< HEAD
-=======
-
-Figure of gross gain and gross loss aggregated to depth window.
->>>>>>> 0813c9017b62b1b1eabb73d1fcaa6fd1d74056fb
 
 Figure of gross gain and gross loss aggregated to depth window.
 
@@ -368,6 +363,58 @@ ggplot(gc, aes(Location*-1, value, color = name)) +
 #     )
 
 ```
+
+Sum gross production and gross loss, then compare to change between Time 1 and Time final.
+Final observation was November (Month = 11). If "Alive" roots, Time 1 is April, otherwise Time 1 is May.
+
+(I've discovered I'm not clear on what precisely to calculate for this check)
+
+```{r check gain loss, echo=T}
+# Change in gross gain and loss: November values minus May values
+gross_change %>% 
+  filter(Month %in% c(5, 11), !is.na(name)) %>% 
+  group_by(name, Month) %>% 
+  summarise(gross_gain = sum(gross_gain, na.rm = T),
+            gross_loss = sum(gross_loss, na.rm = T)) %>% 
+  ungroup(.) %>% 
+  group_by(name) %>% 
+  summarise(gg_chg = gross_gain - lag(gross_gain),
+            gl_chg = gross_loss - lag(gross_loss)) 
+  
+# Sum of gross gain and gross loss across all months, and their difference
+gross_change %>%
+  filter(!is.na(name)) %>% 
+  group_by(name) %>% 
+  summarise(gross_gain = sum(gross_gain, na.rm = T),
+            gross_loss = sum(gross_loss, na.rm = T),
+            net_change = gross_gain - gross_loss)
+
+# Change in 'Alive' roots from April to November
+df %>% 
+  filter(Month %in% c(4, 11), root_status == "Alive") %>% 
+  group_by(Month) %>% 
+  summarise(length = sum(Length_mm),
+            diameter = sum(AvgDiam_cm),
+            volume = sum(Volume_mm3)) %>% 
+  ungroup(.) %>% 
+  mutate(l_chg = length - lag(length),
+         d_chg = diameter - lag(diameter),
+         v_chg = volume - lag(volume))
+
+# Change in Dead/Gone roots from May to November
+df %>% 
+  filter(Month %in% c(5, 11), root_status %in% c("Dead", "Gone")) %>% 
+  group_by(Month) %>% 
+  summarise(length = sum(Length_mm),
+            diameter = sum(AvgDiam_cm),
+            volume = sum(Volume_mm3)) %>% 
+  ungroup(.) %>% 
+  mutate(l_chg = length - lag(length),
+         d_chg = diameter - lag(diameter),
+         v_chg = volume - lag(volume))
+
+```
+
 
 ## Root measurements aggregated to depth window ("location")
 The sum of each metric was calculated at each combination of Tube, Location (depth), Month & Date (equivalent but keeping Date handy), and root_status.

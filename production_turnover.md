@@ -133,11 +133,7 @@ ind_chg <- df %>%
          volume_change = Volume_mm3 - lag(Volume_mm3, n = 1)) %>% 
   ungroup(.)
 
-<<<<<<< HEAD
 ## Not a very elegant solution follows...
-=======
-## Not a very elegant solution
->>>>>>> 0813c9017b62b1b1eabb73d1fcaa6fd1d74056fb
 ind_gross_chg <- ind_chg %>% 
   # select(-Length_mm:-Volume_mm3) %>%
   rename(length = length_change, diameter = diam_change, 
@@ -218,6 +214,94 @@ gross_change <- df %>%
 Figure of gross gain and gross loss aggregated to depth window.
 
 ![](production_turnover_files/figure-gfm/plot_root_change-1.png)<!-- -->
+
+Sum gross production and gross loss, then compare to change between Time
+1 and Time final. Final observation was November (Month = 11). If
+“Alive” roots, Time 1 is April, otherwise Time 1 is May.
+
+(I’ve discovered I’m not clear on what precisely to calculate for this
+check)
+
+``` r
+# Change in gross gain and loss: November values minus May values
+gross_change %>% 
+  filter(Month %in% c(5, 11), !is.na(name)) %>% 
+  group_by(name, Month) %>% 
+  summarise(gross_gain = sum(gross_gain, na.rm = T),
+            gross_loss = sum(gross_loss, na.rm = T)) %>% 
+  ungroup(.) %>% 
+  group_by(name) %>% 
+  summarise(gg_chg = gross_gain - lag(gross_gain),
+            gl_chg = gross_loss - lag(gross_loss)) 
+```
+
+    ## # A tibble: 6 x 3
+    ## # Groups:   name [3]
+    ##   name     gg_chg gl_chg
+    ##   <chr>     <dbl>  <dbl>
+    ## 1 diameter    NA    NA  
+    ## 2 diameter  -649. -176. 
+    ## 3 length      NA    NA  
+    ## 4 length   -1390.   62.5
+    ## 5 volume      NA    NA  
+    ## 6 volume    -126.   15.6
+
+``` r
+# Sum of gross gain and gross loss across all months, and their difference
+gross_change %>%
+  filter(!is.na(name)) %>% 
+  group_by(name) %>% 
+  summarise(gross_gain = sum(gross_gain, na.rm = T),
+            gross_loss = sum(gross_loss, na.rm = T),
+            net_change = gross_gain - gross_loss)
+```
+
+    ## # A tibble: 3 x 4
+    ##   name     gross_gain gross_loss net_change
+    ## * <chr>         <dbl>      <dbl>      <dbl>
+    ## 1 diameter      5543.      5923.      -381.
+    ## 2 length       14383.     11044.      3339.
+    ## 3 volume        1362.       982.       380.
+
+``` r
+# Change in 'Alive' roots from April to November
+df %>% 
+  filter(Month %in% c(4, 11), root_status == "Alive") %>% 
+  group_by(Month) %>% 
+  summarise(length = sum(Length_mm),
+            diameter = sum(AvgDiam_cm),
+            volume = sum(Volume_mm3)) %>% 
+  ungroup(.) %>% 
+  mutate(l_chg = length - lag(length),
+         d_chg = diameter - lag(diameter),
+         v_chg = volume - lag(volume))
+```
+
+    ## # A tibble: 2 x 7
+    ##   Month length diameter volume l_chg d_chg v_chg
+    ## * <dbl>  <dbl>    <dbl>  <dbl> <dbl> <dbl> <dbl>
+    ## 1     4  7481.    3819.   784.   NA    NA    NA 
+    ## 2    11  9862.    4097.  1066. 2381.  277.  282.
+
+``` r
+# Change in Dead/Gone roots from May to November
+df %>% 
+  filter(Month %in% c(5, 11), root_status %in% c("Dead", "Gone")) %>% 
+  group_by(Month) %>% 
+  summarise(length = sum(Length_mm),
+            diameter = sum(AvgDiam_cm),
+            volume = sum(Volume_mm3)) %>% 
+  ungroup(.) %>% 
+  mutate(l_chg = length - lag(length),
+         d_chg = diameter - lag(diameter),
+         v_chg = volume - lag(volume))
+```
+
+    ## # A tibble: 2 x 7
+    ##   Month length diameter volume l_chg d_chg v_chg
+    ## * <dbl>  <dbl>    <dbl>  <dbl> <dbl> <dbl> <dbl>
+    ## 1     5  1091.     874.   58.1   NA    NA    NA 
+    ## 2    11  8890.    6232.  674.  7799. 5359.  616.
 
 ## Root measurements aggregated to depth window (“location”)
 
