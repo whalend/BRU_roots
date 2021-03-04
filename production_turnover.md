@@ -215,93 +215,61 @@ Figure of gross gain and gross loss aggregated to depth window.
 
 ![](production_turnover_files/figure-gfm/plot_root_change-1.png)<!-- -->
 
-Sum gross production and gross loss, then compare to change between Time
-1 and Time final. Final observation was November (Month = 11). If
-“Alive” roots, Time 1 is April, otherwise Time 1 is May.
-
-(I’ve discovered I’m not clear on what precisely to calculate for this
-check)
+Compare calculated gross change (gain - loss) from T\_1\_ to T\_2\_ to
+the observed total at T\_2\_ of root length for each window. \#\#\#
+Sanity Check
 
 ``` r
-# Change in gross gain and loss: November values minus May values
-gross_change %>% 
-  filter(Month %in% c(5, 11), !is.na(name)) %>% 
-  group_by(name, Month) %>% 
-  summarise(gross_gain = sum(gross_gain, na.rm = T),
-            gross_loss = sum(gross_loss, na.rm = T)) %>% 
-  ungroup(.) %>% 
-  group_by(name) %>% 
-  summarise(gg_chg = gross_gain - lag(gross_gain),
-            gl_chg = gross_loss - lag(gross_loss)) 
+df1 <- left_join(
+  df %>% filter(root_status == "Alive") %>% 
+    group_by(Tube, Location, Month) %>% 
+    summarise(TotLength_mm = sum(TotLength_mm)),
+  gross_change %>% 
+    filter(name == "length")
+)
+df1 <- df1 %>% 
+  select(Tube:TotLength_mm, gross_gain, gross_loss) %>% 
+  mutate(calc_net = lag(TotLength_mm, n = 1) + gross_gain - gross_loss)
+
+# A peek at the resulting dataframe
+df1
 ```
 
-    ## # A tibble: 6 x 3
-    ## # Groups:   name [3]
-    ##   name     gg_chg gl_chg
-    ##   <chr>     <dbl>  <dbl>
-    ## 1 diameter    NA    NA  
-    ## 2 diameter  -649. -176. 
-    ## 3 length      NA    NA  
-    ## 4 length   -1390.   62.5
-    ## 5 volume      NA    NA  
-    ## 6 volume    -126.   15.6
+    ## # A tibble: 2,521 x 7
+    ## # Groups:   Tube, Location [347]
+    ##     Tube Location Month TotLength_mm gross_gain gross_loss calc_net
+    ##    <dbl>    <dbl> <dbl>        <dbl>      <dbl>      <dbl>    <dbl>
+    ##  1    12        1     4       105.         NA        NA        NA  
+    ##  2    12        1     5       130.         39.3      12.6     132. 
+    ##  3    12        1     6        74.5        21.2      76.9      74.5
+    ##  4    12        1     7         9.79       NA        NA        NA  
+    ##  5    12        1     8        20.9        15.8       4.70     20.9
+    ##  6    12        1    11         4.44       NA        NA        NA  
+    ##  7    12        2     4        46.5        NA        NA        NA  
+    ##  8    12        2     5        63.7        20.9       3.66     63.7
+    ##  9    12        2     6        59.8        24.1      28.0      59.8
+    ## 10    12        2     7        41.9        18.2      36.1      41.9
+    ## # … with 2,511 more rows
 
 ``` r
-# Sum of gross gain and gross loss across all months, and their difference
-gross_change %>%
-  filter(!is.na(name)) %>% 
-  group_by(name) %>% 
-  summarise(gross_gain = sum(gross_gain, na.rm = T),
-            gross_loss = sum(gross_loss, na.rm = T),
-            net_change = gross_gain - gross_loss)
+ggplot(df1, aes(TotLength_mm, calc_net)) +
+  geom_point() +
+  geom_abline(slope = 1) +
+  ylab("Calculated net of gross gain and gross loss") +
+  xlab("Observed minirhizo length (mm)") +
+  theme_classic() +
+  NULL
 ```
 
-    ## # A tibble: 3 x 4
-    ##   name     gross_gain gross_loss net_change
-    ## * <chr>         <dbl>      <dbl>      <dbl>
-    ## 1 diameter      5543.      5923.      -381.
-    ## 2 length       14383.     11044.      3339.
-    ## 3 volume        1362.       982.       380.
+![](production_turnover_files/figure-gfm/sanity%20check%20gain%20loss-1.png)<!-- -->
 
 ``` r
-# Change in 'Alive' roots from April to November
-df %>% 
-  filter(Month %in% c(4, 11), root_status == "Alive") %>% 
-  group_by(Month) %>% 
-  summarise(length = sum(Length_mm),
-            diameter = sum(AvgDiam_cm),
-            volume = sum(Volume_mm3)) %>% 
-  ungroup(.) %>% 
-  mutate(l_chg = length - lag(length),
-         d_chg = diameter - lag(diameter),
-         v_chg = volume - lag(volume))
+# I think we're pretty okay here
+
+with(df1, cor(calc_net, TotLength_mm, use = "complete.obs"))
 ```
 
-    ## # A tibble: 2 x 7
-    ##   Month length diameter volume l_chg d_chg v_chg
-    ## * <dbl>  <dbl>    <dbl>  <dbl> <dbl> <dbl> <dbl>
-    ## 1     4  7481.    3819.   784.   NA    NA    NA 
-    ## 2    11  9862.    4097.  1066. 2381.  277.  282.
-
-``` r
-# Change in Dead/Gone roots from May to November
-df %>% 
-  filter(Month %in% c(5, 11), root_status %in% c("Dead", "Gone")) %>% 
-  group_by(Month) %>% 
-  summarise(length = sum(Length_mm),
-            diameter = sum(AvgDiam_cm),
-            volume = sum(Volume_mm3)) %>% 
-  ungroup(.) %>% 
-  mutate(l_chg = length - lag(length),
-         d_chg = diameter - lag(diameter),
-         v_chg = volume - lag(volume))
-```
-
-    ## # A tibble: 2 x 7
-    ##   Month length diameter volume l_chg d_chg v_chg
-    ## * <dbl>  <dbl>    <dbl>  <dbl> <dbl> <dbl> <dbl>
-    ## 1     5  1091.     874.   58.1   NA    NA    NA 
-    ## 2    11  8890.    6232.  674.  7799. 5359.  616.
+    ## [1] 0.9975949
 
 ## Root measurements aggregated to depth window (“location”)
 

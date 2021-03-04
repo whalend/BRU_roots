@@ -364,22 +364,9 @@ ggplot(gc, aes(Location*-1, value, color = name)) +
 
 ```
 
-Sum gross production and gross loss, then compare to change between Time 1 and Time final.
-Final observation was November (Month = 11). If "Alive" roots, Time 1 is April, otherwise Time 1 is May.
-
-(I've discovered I'm not clear on what precisely to calculate for this check)
-
-```{r check gain loss, echo=T}
-# Change in gross gain and loss: November values minus May values
-gross_change %>% 
-  filter(Month %in% c(5, 11), !is.na(name)) %>% 
-  group_by(name, Month) %>% 
-  summarise(gross_gain = sum(gross_gain, na.rm = T),
-            gross_loss = sum(gross_loss, na.rm = T)) %>% 
-  ungroup(.) %>% 
-  group_by(name) %>% 
-  summarise(gg_chg = gross_gain - lag(gross_gain),
-            gl_chg = gross_loss - lag(gross_loss))
+Compare calculated gross change (gain - loss) from T_1_ to T_2_ to the observed total at T_2_ of root length for each window.
+### Sanity Check
+```{r sanity check gain loss, echo=T, fig.height=4, fig.width=4}
 
 df1 <- left_join(
   df %>% filter(root_status == "Alive") %>% 
@@ -388,9 +375,24 @@ df1 <- left_join(
   gross_change %>% 
     filter(name == "length")
 )
-df1 %>% 
+df1 <- df1 %>% 
   select(Tube:TotLength_mm, gross_gain, gross_loss) %>% 
   mutate(calc_net = lag(TotLength_mm, n = 1) + gross_gain - gross_loss)
+
+# A peek at the resulting dataframe
+df1
+
+ggplot(df1, aes(TotLength_mm, calc_net)) +
+  geom_point() +
+  geom_abline(slope = 1) +
+  ylab("Calculated net of gross gain and gross loss") +
+  xlab("Observed minirhizo length (mm)") +
+  theme_classic() +
+  NULL
+
+# I think we're pretty okay here
+
+with(df1, cor(calc_net, TotLength_mm, use = "complete.obs"))
 
 ```
 
