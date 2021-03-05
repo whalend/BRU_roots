@@ -44,13 +44,12 @@ dupe_check <- function(df, write_path){
 
 ## Munge to 'long' format ####
 ## Moves 'Alive', 'Dead', 'Gone' to a 'root_status' column, removing these as
-## the leads to the measurements columns.
+## the prefix to the measurements columns.
 ## Then removes the 0 values in the measurement columns.
 
-## not the mose efficient implementation...
+## not the most efficient implementation...
 
-## Make separate data frames of Alive, Dead, Gone measurements
-
+## Make long data frame by root status: Alive, Dead, Gone measurements
 munge_long <- function(df){
   A = df %>% 
     # filter(AliveLength_mm > 0) %>% 
@@ -82,20 +81,8 @@ w_path <- "QAQC_intermediates/"
 dupes <- dupe_check(df, w_path)
 ## Send file of detected duplicates to Stacy for heads-up checking of photos
 
-## Check range of values for 'Alive', 'Dead', 'Gone' ####
-## What are maximum acceptable root lengths within a location?
-## If length is too long presumably SA, Volume, AvgDiam are also questionable
-df %>% 
-  select(AliveLength_mm, DeadLength_mm, GoneLength_mm) %>% 
-  summary()
 
-df %>% 
-  filter(AliveLength_mm > 40) %>% # ~3x the diagonal viewing window
-  write_csv(paste0(w_path, "Alive_over_40mm", Sys.Date(), ".csv"))
-## send these data to Stacy to check if digitized values are correct
-
-
-## Make Data Corrections ####
+## Make Data Corrections (initial iteration) ####
 ## Load checked duplicates file from Stacy
 ## Downloaded from Teams
 qaqc_data <- read_xlsx("QAQC_intermediates/QAQC_notes_corr.xlsx", sheet = 1)
@@ -109,7 +96,9 @@ unique(qaqc_data$note)
 ## Filter to duped rows that simply need deleted
 del_dupes <- qaqc_data %>% 
   filter(note == "delete") %>% 
-  select(-note)
+  select(-note, AvgDiam_mm = AvgDiam_cm, TotAvgDiam_mm = TotAvgDiam_cm) %>% 
+  mutate(AvgDiam_mm = AvgDiam_mm/10,
+         TotAvgDiam_mm = TotAvgDiam_mm/10)
 
 ## Keep only the 'good' rows
 df <- anti_join(df, del_dupes)# drops rows in 'del_dupes'
@@ -120,7 +109,9 @@ df <- anti_join(df, del_dupes)# drops rows in 'del_dupes'
 ## errors discovered while checking the duplicated 'obs_ID'
 correct_data <- read_xlsx("QAQC_intermediates/QAQC_notes_corr.xlsx", sheet = 2)
 correct_data <- correct_data %>% 
-  select(-corr_date)
+  select(-corr_date, AvgDiam_mm = AvgDiam_cm, TotAvgDiam_mm = TotAvgDiam_cm) %>% 
+  mutate(AvgDiam_mm = AvgDiam_mm/10,
+         TotAvgDiam_mm = TotAvgDiam_mm/10)
 
 df <- df %>% 
   # First delete the observation(s)
@@ -131,7 +122,23 @@ df <- df %>%
 ## Ultimately should have no more duplicate observations, but this is iterative
 ## b/c not all data is present yet. Will need to rerun code above when new data
 ## is added.
-dupe_check(df, w_path)
+dupes <- dupe_check(df, w_path)
+
+
+## Check range of values for 'Alive', 'Dead', 'Gone' ####
+## What are maximum acceptable root lengths and diameters within a location?
+## If length or diameter is too long, SA and Volume are also questionable
+summary(df)
+
+df %>% 
+  filter(Length_mm > 40) %>% # ~3x the diagonal viewing window
+  write_csv(paste0(w_path, "Length_over_40mm", Sys.Date(), ".csv"))
+## send these data to Stacy to check if digitized values are correct
+
+df %>% 
+  filter(AvgDiam_mm>2) %>% 
+  write_csv(paste0(w_path, "AvgDiam_over_2mm", Sys.Date(), ".csv"))
+
 
 ## Add Date formatting ####
 df <- df %>% 
@@ -142,7 +149,8 @@ df <- df %>%
 # write_csv(df, "data/processed_data/mr_roots_data_corrected.csv")
 
 
-## Correct Nonsensical Status Changes ####
+## Correct Nonsensical Status Changes? ####
+## Zombies and Wanderers and Wandering Zombies
 
 ## Find status changes
 df2 <- df %>% 

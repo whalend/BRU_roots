@@ -10,6 +10,7 @@ library(tidyverse)
 library(readxl)
 library(tibble)
 
+## Read in .xlsx files in provided directory
 read_fn <- function(file_path, sheet_num){
   
   flist = list.files(file_path, pattern = "*.xlsx", full.names = TRUE)
@@ -21,7 +22,7 @@ read_fn <- function(file_path, sheet_num){
   return(t)
 }
 
-df <- read_fn("raw_data", 3)
+df <- read_fn("data/raw_data", sheet = 3)
 head(df)
 summary(df)
 
@@ -68,24 +69,29 @@ df <- df %>%
   rename(Tube = `Tube#`, Location = `Location#`, Session = `Session#`,
          TotLength_mm = `TotLength(mm)`, TotProjArea_mm2 = `TotProjArea(mm2)`,
          TotSurfArea_mm2 = `TotSurfArea(mm2)`, 
-         TotAvgDiam_cm = `TotAvgDiam(mm/10)`, TotVolume_mm3 = `TotVolume(mm3)`,
+         TotAvgDiam_mm = `TotAvgDiam(mm/10)`, TotVolume_mm3 = `TotVolume(mm3)`,
          
          AliveLength_mm = AliveLength, AliveProjArea_mm2 = AliveProjArea,
-         AliveSurfArea_mm2 = AliveSurfArea, AliveAvgDiam_cm = AliveAvgDiam,
+         AliveSurfArea_mm2 = AliveSurfArea, AliveAvgDiam_mm = AliveAvgDiam,
          AliveVolume_mm3 = AliveVolume,
          
          DeadLength_mm = DeadLength, DeadProjArea_mm2 = DeadProjArea,
-         DeadSurfArea_mm2 = DeadSurfArea, DeadAvgDiam_cm = DeadAvgDiam,
+         DeadSurfArea_mm2 = DeadSurfArea, DeadAvgDiam_mm = DeadAvgDiam,
          DeadVolume_mm3 = DeadVolume,
          
          GoneLength_mm = GoneLength, GoneProjArea_mm2 = GoneProjArea,
-         GoneSurfArea_mm2 = GoneSurfArea, GoneAvgDiam_cm = GoneAvgDiam,
+         GoneSurfArea_mm2 = GoneSurfArea, GoneAvgDiam_mm = GoneAvgDiam,
          GoneVolume_mm3 = GoneVolume
   )
 
 ## Add unique IDs for root and each observation of the root
 df <- df %>% 
   mutate(root_ID = paste(Tube, Location, RootName, sep = "_"),
-         obs_ID = paste(Session, root_ID, sep = "_")) %>% 
+         obs_ID = paste(Session, root_ID, sep = "_"),
+         # Convert AvgDiam to mm units
+         TotAvgDiam_mm = TotAvgDiam_mm/10,
+         AliveAvgDiam_mm = AliveAvgDiam_mm/10,
+         DeadAvgDiam_mm = DeadAvgDiam_mm/10,
+         GoneAvgDiam_mm = GoneAvgDiam_mm/10) %>% 
   select(obs_ID, root_ID, everything())
-write_csv(df, "raw_data/all_raw_observations.csv")
+write_csv(df, "data/raw_data/all_raw_observations.csv")
