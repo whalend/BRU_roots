@@ -16,6 +16,13 @@ knitr::opts_chunk$set(fig.height = 8, fig.width = 6)
 ```{r load packages and data}
 library(tidyverse)
 df <- read_csv("data/processed_data/mr_roots_data_corrected.csv")
+
+library(readxl)
+trt <- read_xlsx("data/treatments.xlsx")
+#cut
+#cut+manure
+#control
+
 ```
 
 CW: use MR + models to get at dynamic rates with depth, and static cores to get biomass/length with depth, then propagate them together to get summed fluxes of production and turnover.
@@ -156,6 +163,9 @@ df <- df %>% mutate(
       ">5.5 - 6 cm",
       ">6 cm"))
   )
+
+df <- left_join(df, trt, by = c("Tube" = "rhizotron_tube"))
+df
 ```
 
 ## Production and loss (change) of individual roots
@@ -179,9 +189,9 @@ Calculate gross change for individual roots in length, diameter, and volume betw
 ## given the definition of gross gain & loss could do only 'Alive'
 ind_chg <- df %>% 
   select(obs_ID, root_ID, Tube, Location, Date, Session, Month, root_status, 
-         Length_mm, AvgDiam_cm, Volume_mm3) %>% 
+         Length_mm, AvgDiam_cm, Volume_mm3, treatment) %>% 
   arrange(root_ID, Session) %>% 
-  group_by(root_ID, root_status, Tube, Location) %>% 
+  group_by(root_ID, root_status, Tube, Location, treatment) %>% 
   # lag subtracts the previous value; NAs when there is no value to subtract
   mutate(length_change = Length_mm - lag(Length_mm, n = 1),
          diam_change = AvgDiam_cm - lag(AvgDiam_cm, n = 1),
@@ -200,7 +210,7 @@ ind_gross_chg <- ind_chg %>%
 growth <- ind_gross_chg %>% 
   # summarise growth of existing roots to each depth
   filter(root_status == 'Alive', value >= 0) %>% 
-  group_by(Tube, Location, Month, name) %>% 
+  group_by(Tube, Location, Month, name, treatment) %>% 
   summarise(root_growth = sum(value)) %>% 
   ungroup(.)
 # summary(growth)
@@ -209,7 +219,7 @@ growth <- ind_gross_chg %>%
 new_roots <- ind_gross_chg %>%
   # only roots that have NA for the change value
   filter(Month > 4, root_status == 'Alive', is.na(value)) %>% 
-  distinct(root_ID, Tube, Location, Month) %>% 
+  distinct(root_ID, Tube, Location, Month, treatment) %>% 
   # get only these root IDs & recombine with gross values
   left_join(., ind_chg %>% select(root_ID, Tube, Location, Month, Length_mm:Volume_mm3)) %>%
   # rename in prep for joining with 'growth' data frame
@@ -217,7 +227,7 @@ new_roots <- ind_gross_chg %>%
          volume = Volume_mm3) %>%
   # match data format of 'growth'
   pivot_longer(length:volume) %>% 
-  group_by(Tube, Location, Month, name) %>% 
+  group_by(Tube, Location, Month, name, treatment) %>% 
   summarise(new_roots = sum(value)) %>% 
   ungroup(.)
 # join growth with new roots
@@ -234,7 +244,7 @@ gain_depth <- gain_depth %>%
 # get loss in 'Alive' roots (analogous to 'growth')
 loss <- ind_gross_chg %>%
   filter(root_status == 'Alive' & value < 0) %>% 
-  group_by(Tube, Location, Month, name) %>% 
+  group_by(Tube, Location, Month, name, treatment) %>% 
   summarise(root_loss = sum(abs(value))) %>% 
   ungroup(.)
 
@@ -245,11 +255,11 @@ dead_gone <- ind_gross_chg %>%
          is.na(value)) %>% 
   # get only these root IDs & recombine with gross values
   distinct(root_ID, Tube, Location, Month) %>% 
-  left_join(., ind_chg %>% select(root_ID, Tube, Location, Month, Length_mm:Volume_mm3)) %>%
+  left_join(., ind_chg %>% select(root_ID, Tube, Location, Month, Length_mm:Volume_mm3, treatment)) %>%
   rename(length = Length_mm, diameter = AvgDiam_cm,
          volume = Volume_mm3) %>%
   pivot_longer(length:volume) %>% 
-  group_by(Tube, Location, Month, name) %>% 
+  group_by(Tube, Location, Month, name, treatment) %>% 
   summarise(dg_roots = sum(value)) %>% 
   ungroup(.)
 
@@ -261,7 +271,7 @@ loss_depth <- loss_depth %>%
 # Combine so that gross gain and gross loss are in one data frame
 gross_change <- df %>%
   filter(Month > 4) %>% 
-  distinct(Tube, Location, Month) %>% 
+  distinct(Tube, Location, Month, treatment) %>% 
   left_join(., gain_depth) %>% 
   left_join(., loss_depth)
 
@@ -317,16 +327,16 @@ Figure of gross gain and gross loss aggregated to depth window.
 #     )
 gc <- gross_change %>% 
   filter(!is.na(gross_gain)) %>% 
-  select(Tube:name, gross_gain, gross_loss) %>% 
+  select(Tube:name, treatment, gross_gain, gross_loss) %>% 
   rename(metric = name) %>% 
   pivot_longer(gross_gain:gross_loss)
 
-ggplot(gc, aes(Location*-1, value, color = name)) +
+ggplot(gc %>% filter(metric == "length"), aes(Location*-1, value, color = name)) +
   geom_point(alpha = .2, size = .5) +
   geom_smooth(method = "gam", size = .5, show.legend = T, se = F) +
   scale_color_manual(values = c("deepskyblue", "red")) +
   coord_flip() +
-  facet_grid(Month ~ metric, scales = "free_x") +
+  facet_grid(Month ~ treatment, scales = "free_x") +
   xlab("Relative depth") +
   ylab("Gross change") +
   theme_bw() +
@@ -370,7 +380,7 @@ Compare calculated gross change (gain - loss) from T_1_ to T_2_ to the observed 
 
 df1 <- left_join(
   df %>% filter(root_status == "Alive") %>% 
-    group_by(Tube, Location, Month) %>% 
+    group_by(Tube, Location, Month, treatment) %>% 
     summarise(TotLength_mm = sum(TotLength_mm)),
   gross_change %>% 
     filter(name == "length")
@@ -381,7 +391,6 @@ df1 <- df1 %>%
 
 # A peek at the resulting dataframe
 df1
-
 ggplot(df1, aes(TotLength_mm, calc_net)) +
   geom_point() +
   geom_abline(slope = 1) +
@@ -395,6 +404,48 @@ ggplot(df1, aes(TotLength_mm, calc_net)) +
 with(df1, cor(calc_net, TotLength_mm, use = "complete.obs"))
 
 ```
+
+```{r model gross change}
+df2 <- gross_change %>% 
+  filter(name == "length") %>% 
+  group_by(Tube, Location, treatment) %>% 
+  summarise(gg_sum = sum(gross_gain, na.rm = TRUE),
+            gl_sum = sum(gross_loss, na.rm = TRUE))
+
+ggplot(df2 %>% filter(Location <= 20), aes(x = Location*-1, color = treatment)) +
+  geom_point(aes(y = gg_sum), shape = 1, alpha = 1, size = .5) +
+  geom_point(aes(y = gl_sum), shape = 2, alpha = 1, size = .5) +
+  geom_smooth(aes(y = gg_sum), linetype = 1, method = "gam", size = .5, show.legend = T, se = F) +
+  geom_smooth(aes(y = gl_sum), linetype = 2, method = "gam", size = .5, show.legend = T, se = F) +
+  # scale_color_manual(values = c("deepskyblue", "red")) +
+  coord_flip() +
+  # facet_grid(. ~ treatment) +
+  xlab("Relative depth") +
+  ylab("Gross change") +
+  theme_bw() +
+  theme(
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.title = element_blank()
+    )
+
+# separate clipped and manure
+df2 <- df2 %>% 
+  mutate(clipped = as.factor(ifelse(treatment!="control", "yes", "no")),
+         manure = as.factor(ifelse(treatment=="cut+manure", "yes", "no")))
+
+d <- df2 %>% 
+  filter(Location <= 20)
+library(lme4)
+m <- lmer(gl_sum ~ clipped + clipped:manure + (1|Location) + (1|Tube), data = df2)
+summary(m)
+sjPlot::plot_model(m, type = "re")
+
+m2 <- lmer(gg_sum ~ clipped + clipped:manure + (1|Location) + (1|Tube), data = df2)
+summary(m2)
+sjPlot::plot_model(m2, type = "re")
+```
+
 
 
 ## Root measurements aggregated to depth window ("location")
