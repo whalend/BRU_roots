@@ -79,9 +79,9 @@ tube.”
 
 Number of new root IDs since initiation in April
 
-April roots: 1403
+April roots: 5409
 
-New roots: 2596
+New roots: 8911
 
 That’s more new root IDs than I thought there would be.
 
@@ -101,6 +101,29 @@ That’s more new root IDs than I thought there would be.
 2.  Length, Diameter, Production, Turnover by Day of Year (Month)
 
 <!-- Size (diameter) & depth biplot of days to senescence -->
+
+    ## # A tibble: 86,629 x 38
+    ##    obs_ID root_ID SampleId RootName  Tube Location Date        Time Session
+    ##    <chr>  <chr>   <chr>    <chr>    <dbl>    <dbl> <date>     <dbl>   <dbl>
+    ##  1 1_1_1… 1_1_R1  BRUROOT… R1           1        1 2020-04-21 94911       1
+    ##  2 1_1_1… 1_1_R2  BRUROOT… R2           1        1 2020-04-21 94911       1
+    ##  3 1_1_2… 1_2_R1  BRUROOT… R1           1        2 2020-04-21 94925       1
+    ##  4 1_1_2… 1_2_R2  BRUROOT… R2           1        2 2020-04-21 94925       1
+    ##  5 1_1_2… 1_2_R3  BRUROOT… R3           1        2 2020-04-21 94925       1
+    ##  6 1_1_2… 1_2_R4  BRUROOT… R4           1        2 2020-04-21 94925       1
+    ##  7 1_1_2… 1_2_R5  BRUROOT… R5           1        2 2020-04-21 94925       1
+    ##  8 1_1_2… 1_2_R6  BRUROOT… R6           1        2 2020-04-21 94925       1
+    ##  9 1_1_2… 1_2_R7  BRUROOT… R7           1        2 2020-04-21 94925       1
+    ## 10 1_1_2… 1_2_R8  BRUROOT… R8           1        2 2020-04-21 94925       1
+    ## # … with 86,619 more rows, and 29 more variables: DataGatherer <chr>,
+    ## #   BirthSession <dbl>, DeathSession <dbl>, TotLength_mm <dbl>,
+    ## #   TotProjArea_mm2 <dbl>, TotSurfArea_mm2 <dbl>, TotAvgDiam_mm <dbl>,
+    ## #   TotVolume_mm3 <dbl>, Length_mm <dbl>, ProjArea_mm2 <dbl>,
+    ## #   SurfArea_mm2 <dbl>, AvgDiam_mm <dbl>, Volume_mm3 <dbl>, TipDiam <dbl>,
+    ## #   TipLivStatus <chr>, HighestOrder <dbl>, ExtPathLength <dbl>,
+    ## #   Altitude <dbl>, root_status <chr>, rowID <chr>, Month <dbl>,
+    ## #   length_bin <fct>, diam_bin <fct>, block <dbl>, composition <chr>,
+    ## #   plot <dbl>, subplot <chr>, treatment <chr>, type <chr>
 
 ## Production and loss (change) of individual roots
 
@@ -124,18 +147,18 @@ can then be aggregated to the depth window.
 ## given the definition of gross gain & loss could do only 'Alive'
 ind_chg <- df %>% 
   select(obs_ID, root_ID, Tube, Location, Date, Session, Month, root_status, 
-         Length_mm, AvgDiam_cm, Volume_mm3) %>% 
+         Length_mm, AvgDiam_mm, Volume_mm3, treatment) %>% 
   arrange(root_ID, Session) %>% 
-  group_by(root_ID, root_status, Tube, Location) %>% 
+  group_by(root_ID, root_status, Tube, Location, treatment) %>% 
   # lag subtracts the previous value; NAs when there is no value to subtract
   mutate(length_change = Length_mm - lag(Length_mm, n = 1),
-         diam_change = AvgDiam_cm - lag(AvgDiam_cm, n = 1),
+         diam_change = AvgDiam_mm - lag(AvgDiam_mm, n = 1),
          volume_change = Volume_mm3 - lag(Volume_mm3, n = 1)) %>% 
   ungroup(.)
 
 ## Not a very elegant solution follows...
 ind_gross_chg <- ind_chg %>% 
-  # select(-Length_mm:-Volume_mm3) %>%
+  select(-Length_mm:-Volume_mm3) %>%
   rename(length = length_change, diameter = diam_change, 
          volume = volume_change) %>% 
   # long format to use metric as grouping variable
@@ -145,7 +168,7 @@ ind_gross_chg <- ind_chg %>%
 growth <- ind_gross_chg %>% 
   # summarise growth of existing roots to each depth
   filter(root_status == 'Alive', value >= 0) %>% 
-  group_by(Tube, Location, Month, name) %>% 
+  group_by(Tube, Location, Month, name, treatment) %>% 
   summarise(root_growth = sum(value)) %>% 
   ungroup(.)
 # summary(growth)
@@ -154,17 +177,20 @@ growth <- ind_gross_chg %>%
 new_roots <- ind_gross_chg %>%
   # only roots that have NA for the change value
   filter(Month > 4, root_status == 'Alive', is.na(value)) %>% 
-  distinct(root_ID, Tube, Location, Month) %>% 
+  distinct(root_ID, Tube, Location, Month, treatment) %>% 
   # get only these root IDs & recombine with gross values
   left_join(., ind_chg %>% select(root_ID, Tube, Location, Month, Length_mm:Volume_mm3)) %>%
   # rename in prep for joining with 'growth' data frame
-  rename(length = Length_mm, diameter = AvgDiam_cm, 
+  rename(length = Length_mm, diameter = AvgDiam_mm, 
          volume = Volume_mm3) %>%
   # match data format of 'growth'
   pivot_longer(length:volume) %>% 
-  group_by(Tube, Location, Month, name) %>% 
+  group_by(Tube, Location, Month, name, treatment) %>% 
   summarise(new_roots = sum(value)) %>% 
   ungroup(.)
+# summary(new_roots)
+# new_roots %>% filter(new_roots>100)
+
 # join growth with new roots
 gain_depth <- left_join(growth, new_roots)
 # add growth & new roots to get gross gain
@@ -174,12 +200,30 @@ gain_depth <- gain_depth %>%
     new_roots = ifelse(is.na(new_roots), 0, new_roots),
     gross_gain = root_growth + new_roots
     )
+gain_depth %>% summary()
+```
 
+    ##       Tube         Location         Month           name          
+    ##  Min.   : 1.0   Min.   : 1.00   Min.   : 5.00   Length:16255      
+    ##  1st Qu.: 7.0   1st Qu.:10.00   1st Qu.: 6.00   Class :character  
+    ##  Median :12.0   Median :21.00   Median : 8.00   Mode  :character  
+    ##  Mean   :12.4   Mean   :21.39   Mean   : 8.04                     
+    ##  3rd Qu.:18.0   3rd Qu.:32.00   3rd Qu.:10.00                     
+    ##  Max.   :24.0   Max.   :44.00   Max.   :11.00                     
+    ##   treatment          root_growth         new_roots          gross_gain       
+    ##  Length:16255       Min.   : 0.00000   Min.   :  0.0000   Min.   :  0.00000  
+    ##  Class :character   1st Qu.: 0.00000   1st Qu.:  0.0000   1st Qu.:  0.03277  
+    ##  Mode  :character   Median : 0.04462   Median :  0.0422   Median :  0.38890  
+    ##                     Mean   : 1.20244   Mean   :  2.2153   Mean   :  3.41773  
+    ##                     3rd Qu.: 0.61790   3rd Qu.:  0.8222   3rd Qu.:  2.09355  
+    ##                     Max.   :55.05780   Max.   :191.7091   Max.   :195.50220
+
+``` r
 # gross loss = loss in 'Alive' + 'Dead' + 'Gone' 
 # get loss in 'Alive' roots (analogous to 'growth')
 loss <- ind_gross_chg %>%
   filter(root_status == 'Alive' & value < 0) %>% 
-  group_by(Tube, Location, Month, name) %>% 
+  group_by(Tube, Location, Month, name, treatment) %>% 
   summarise(root_loss = sum(abs(value))) %>% 
   ungroup(.)
 
@@ -189,12 +233,12 @@ dead_gone <- ind_gross_chg %>%
   filter(Month > 4, root_status %in% c('Dead', 'Gone'),
          is.na(value)) %>% 
   # get only these root IDs & recombine with gross values
-  distinct(root_ID, Tube, Location, Month) %>% 
-  left_join(., ind_chg %>% select(root_ID, Tube, Location, Month, Length_mm:Volume_mm3)) %>%
-  rename(length = Length_mm, diameter = AvgDiam_cm,
+  distinct(root_ID, Tube, Location, Month, treatment) %>% 
+  left_join(., ind_chg %>% select(root_ID, Tube, Location, Month, Length_mm:Volume_mm3, treatment)) %>%
+  rename(length = Length_mm, diameter = AvgDiam_mm,
          volume = Volume_mm3) %>%
   pivot_longer(length:volume) %>% 
-  group_by(Tube, Location, Month, name) %>% 
+  group_by(Tube, Location, Month, name, treatment) %>% 
   summarise(dg_roots = sum(value)) %>% 
   ungroup(.)
 
@@ -202,11 +246,29 @@ loss_depth <- left_join(dead_gone, loss)
 loss_depth <- loss_depth %>% 
   mutate(root_loss = ifelse(is.na(root_loss), 0, root_loss),
     gross_loss = dg_roots + root_loss)
+summary(loss_depth)
+```
 
+    ##       Tube          Location         Month            name          
+    ##  Min.   : 1.00   Min.   : 1.00   Min.   : 5.000   Length:11628      
+    ##  1st Qu.: 7.00   1st Qu.: 8.00   1st Qu.: 6.000   Class :character  
+    ##  Median :12.00   Median :19.00   Median : 8.000   Mode  :character  
+    ##  Mean   :12.57   Mean   :19.83   Mean   : 7.987                     
+    ##  3rd Qu.:18.00   3rd Qu.:30.00   3rd Qu.:10.000                     
+    ##  Max.   :24.00   Max.   :44.00   Max.   :11.000                     
+    ##   treatment            dg_roots         root_loss         gross_loss      
+    ##  Length:11628       Min.   : 0.0012   Min.   : 0.0000   Min.   :  0.0012  
+    ##  Class :character   1st Qu.: 0.2394   1st Qu.: 0.0000   1st Qu.:  0.3794  
+    ##  Mode  :character   Median : 0.6838   Median : 0.1011   Median :  1.0079  
+    ##                     Mean   : 3.2680   Mean   : 1.8182   Mean   :  5.0862  
+    ##                     3rd Qu.: 2.7437   3rd Qu.: 1.2390   3rd Qu.:  5.2337  
+    ##                     Max.   :94.6837   Max.   :63.2020   Max.   :140.3168
+
+``` r
 # Combine so that gross gain and gross loss are in one data frame
 gross_change <- df %>%
   filter(Month > 4) %>% 
-  distinct(Tube, Location, Month) %>% 
+  distinct(Tube, Location, Month, treatment) %>% 
   left_join(., gain_depth) %>% 
   left_join(., loss_depth)
 ```
@@ -222,41 +284,42 @@ Sanity Check
 ``` r
 df1 <- left_join(
   df %>% filter(root_status == "Alive") %>% 
-    group_by(Tube, Location, Month) %>% 
+    group_by(Tube, Location, Month, treatment) %>% 
     summarise(TotLength_mm = sum(TotLength_mm)),
   gross_change %>% 
     filter(name == "length")
-)
+) %>% 
+  ungroup(.)
 df1 <- df1 %>% 
   select(Tube:TotLength_mm, gross_gain, gross_loss) %>% 
   mutate(calc_net = lag(TotLength_mm, n = 1) + gross_gain - gross_loss)
+# View(df1)
 
 # A peek at the resulting dataframe
 df1
 ```
 
-    ## # A tibble: 2,521 x 7
-    ## # Groups:   Tube, Location [347]
-    ##     Tube Location Month TotLength_mm gross_gain gross_loss calc_net
-    ##    <dbl>    <dbl> <dbl>        <dbl>      <dbl>      <dbl>    <dbl>
-    ##  1    12        1     4       105.         NA        NA        NA  
-    ##  2    12        1     5       130.         39.3      12.6     132. 
-    ##  3    12        1     6        74.5        21.2      76.9      74.5
-    ##  4    12        1     7         9.79       NA        NA        NA  
-    ##  5    12        1     8        20.9        15.8       4.70     20.9
-    ##  6    12        1    11         4.44       NA        NA        NA  
-    ##  7    12        2     4        46.5        NA        NA        NA  
-    ##  8    12        2     5        63.7        20.9       3.66     63.7
-    ##  9    12        2     6        59.8        24.1      28.0      59.8
-    ## 10    12        2     7        41.9        18.2      36.1      41.9
-    ## # … with 2,511 more rows
+    ## # A tibble: 7,485 x 8
+    ##     Tube Location Month treatment TotLength_mm gross_gain gross_loss calc_net
+    ##    <dbl>    <dbl> <dbl> <chr>            <dbl>      <dbl>      <dbl>    <dbl>
+    ##  1     1        1     4 control           23.2      NA         NA        NA  
+    ##  2     1        1     5 control           11.3      NA         NA        NA  
+    ##  3     1        1     6 control           62.3      37.7        1.78     47.2
+    ##  4     1        1     7 control           76.2      37.9       24.0      76.2
+    ##  5     1        1     8 control           78.5       7.59      16.7      67.1
+    ##  6     1        1     9 control           36.6      11.6       53.6      36.6
+    ##  7     1        1    10 control           65.6       9.52      23.3      22.8
+    ##  8     1        1    11 control           77.7      18.6        6.40     77.7
+    ##  9     1        2     4 control           27.0      NA         NA        NA  
+    ## 10     1        2     5 control           54.0      42.8       15.7      54.0
+    ## # … with 7,475 more rows
 
 ``` r
 ggplot(df1, aes(TotLength_mm, calc_net)) +
   geom_point() +
   geom_abline(slope = 1) +
   ylab("Calculated net of gross gain and gross loss") +
-  xlab("Observed minirhizo length (mm)") +
+  xlab("Observed minirhizo TotLength (mm)") +
   theme_classic() +
   NULL
 ```
@@ -269,7 +332,71 @@ ggplot(df1, aes(TotLength_mm, calc_net)) +
 with(df1, cor(calc_net, TotLength_mm, use = "complete.obs"))
 ```
 
-    ## [1] 0.9975949
+    ## [1] 0.9977771
+
+![](production_turnover_files/figure-gfm/model%20gross%20change-1.png)<!-- -->
+
+    ## Linear mixed model fit by REML ['lmerMod']
+    ## Formula: gl_sum ~ clipped + clipped:manure + (1 | Location) + (1 | Tube)
+    ##    Data: d
+    ## 
+    ## REML criterion at convergence: 10162.3
+    ## 
+    ## Scaled residuals: 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -3.3366 -0.6148 -0.1965  0.4938  4.2910 
+    ## 
+    ## Random effects:
+    ##  Groups   Name        Variance Std.Dev.
+    ##  Location (Intercept)  274.9   16.58   
+    ##  Tube     (Intercept)  745.0   27.30   
+    ##  Residual             1237.7   35.18   
+    ## Number of obs: 1007, groups:  Location, 44; Tube, 24
+    ## 
+    ## Fixed effects:
+    ##                      Estimate Std. Error t value
+    ## (Intercept)           44.8324    10.1592   4.413
+    ## clippedyes            -5.1014    13.9212  -0.366
+    ## clippedyes:manureyes   0.9263    13.9121   0.067
+    ## 
+    ## Correlation of Fixed Effects:
+    ##             (Intr) clppdy
+    ## clippedyes  -0.686       
+    ## clppdys:mnr  0.000 -0.500
+    ## fit warnings:
+    ## fixed-effect model matrix is rank deficient so dropping 1 column / coefficient
+
+    ## Linear mixed model fit by REML ['lmerMod']
+    ## Formula: gg_sum ~ clipped + clipped:manure + (1 | Location) + (1 | Tube)
+    ##    Data: d
+    ## 
+    ## REML criterion at convergence: 10207.4
+    ## 
+    ## Scaled residuals: 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -3.8905 -0.6180 -0.1598  0.4761  5.2857 
+    ## 
+    ## Random effects:
+    ##  Groups   Name        Variance Std.Dev.
+    ##  Location (Intercept)  235.6   15.35   
+    ##  Tube     (Intercept)  933.3   30.55   
+    ##  Residual             1299.2   36.04   
+    ## Number of obs: 1007, groups:  Location, 44; Tube, 24
+    ## 
+    ## Fixed effects:
+    ##                      Estimate Std. Error t value
+    ## (Intercept)            54.924     11.227   4.892
+    ## clippedyes             -8.539     15.532  -0.550
+    ## clippedyes:manureyes   -2.092     15.524  -0.135
+    ## 
+    ## Correlation of Fixed Effects:
+    ##             (Intr) clppdy
+    ## clippedyes  -0.692       
+    ## clppdys:mnr  0.000 -0.500
+    ## fit warnings:
+    ## fixed-effect model matrix is rank deficient so dropping 1 column / coefficient
+
+![](production_turnover_files/figure-gfm/model%20gross%20change-2.png)<!-- -->
 
 ## Root measurements aggregated to depth window (“location”)
 
