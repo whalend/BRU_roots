@@ -86,7 +86,7 @@ df <- df %>%
 
 ## Add unique IDs for root and each observation of the root
 df <- df %>% 
-  mutate(root_ID = paste(Tube, Location, RootName, sep = "_"),
+  mutate(root_ID = paste(Tube, Location, RootName, BirthSession, sep = "_"),
          obs_ID = paste(Session, root_ID, sep = "_"),
          # Convert AvgDiam to mm units
          TotAvgDiam_mm = TotAvgDiam_mm/10,

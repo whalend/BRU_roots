@@ -75,6 +75,7 @@ munge_long <- function(df){
 }
 df <- munge_long(df)
 
+## Add a rowID for QAQC joining
 df <- df %>% 
   mutate(rowID = paste0(obs_ID, Length_mm, ProjArea_mm2, SurfArea_mm2,
                         AvgDiam_mm, Volume_mm3, TipDiam, TipLivStatus,
@@ -92,6 +93,11 @@ dupes <- dupe_check(df, w_path)
 ## Load checked duplicates file from Stacy
 ## Downloaded from Teams
 qaqc_data <- read_xlsx("QAQC_intermediates/QAQC_notes_corr.xlsx", sheet = "original_notes", trim_ws = TRUE)
+## Update root_ID and obs_ID with BirthSession
+qaqc_data <- qaqc_data %>% 
+  mutate(root_ID = paste(root_ID, BirthSession, sep = "_"),
+         obs_ID = paste(Session, root_ID, sep = "_"))
+
 
 ## Check 'notes' values to clue in on anything other than deleting rows
 unique(qaqc_data$note)
@@ -101,11 +107,18 @@ unique(qaqc_data$note)
 qaqc_data2 <- read_xlsx("QAQC_intermediates/duped_observations_2021-03-05_with_corrections.xlsx", sheet = "corrected data", trim_ws = TRUE)
 unique(qaqc_data2$flag)
 # view(qaqc_data2)
+## The "change id" shouldn't be needed with the updated root_ID
+# qaqc_data2 %>% filter(flag=="change id") 
+## Remove "change id" and update root_ID, obs_ID
+qaqc_data2 <- qaqc_data2 %>% 
+  filter(flag != "change id") %>% 
+  mutate(root_ID = paste(root_ID, BirthSession, sep = "_"),
+         obs_ID = paste(Session, root_ID, sep = "_"))
 
 unique(names(qaqc_data)%in%names(qaqc_data2))
 
 corrections2 <- qaqc_data2 %>% 
-  filter(!flag%in%c("ok","delete"))
+  filter(flag == "replace")
 
 qaqc_data = qaqc_data %>% 
   rename(flag = note, 
@@ -161,12 +174,15 @@ df <- anti_join(df, del_dupes, by = "rowID")# drops rows in 'del_dupes'
 ## errors discovered while checking the duplicated 'obs_ID'
 correct_data <- read_xlsx("QAQC_intermediates/QAQC_notes_corr.xlsx", sheet = "corrections")
 correct_data <- correct_data %>% 
-  select(-corr_date, AvgDiam_mm = AvgDiam_cm, TotAvgDiam_mm = TotAvgDiam_cm) %>% 
-  mutate(AvgDiam_mm = AvgDiam_mm/10,
+  select(-corr_date) %>% 
+  rename(AvgDiam_mm = AvgDiam_cm, TotAvgDiam_mm = TotAvgDiam_cm) %>% 
+  mutate(root_ID = paste(root_ID, BirthSession, sep = "_"),
+         obs_ID = paste(Session, root_ID, sep = "_"),
+         AvgDiam_mm = AvgDiam_mm/10,
          TotAvgDiam_mm = TotAvgDiam_mm/10)
 
-corrections2
-correct_data
+# corrections2
+# correct_data
 correct_data <- rbind(select(corrections2, -flag),
                       correct_data)
 
@@ -205,7 +221,7 @@ df <- df %>%
          Month = lubridate::month(Date))
 
 ## Export Corrected Data ####
-# write_csv(df, "data/processed_data/mr_roots_data_corrected.csv")
+write_csv(df, "data/processed_data/mr_roots_data_corrected.csv")
 
 
 ## Correct Nonsensical Status Changes? ####
