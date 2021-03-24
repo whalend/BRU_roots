@@ -81,7 +81,7 @@ Number of new root IDs since initiation in April
 
 April roots: 5409
 
-New roots: 8911
+New roots: 8916
 
 That’s more new root IDs than I thought there would be.
 
@@ -105,16 +105,16 @@ That’s more new root IDs than I thought there would be.
     ## # A tibble: 86,629 x 38
     ##    obs_ID root_ID SampleId RootName  Tube Location Date        Time Session
     ##    <chr>  <chr>   <chr>    <chr>    <dbl>    <dbl> <date>     <dbl>   <dbl>
-    ##  1 1_1_1… 1_1_R1  BRUROOT… R1           1        1 2020-04-21 94911       1
-    ##  2 1_1_1… 1_1_R2  BRUROOT… R2           1        1 2020-04-21 94911       1
-    ##  3 1_1_2… 1_2_R1  BRUROOT… R1           1        2 2020-04-21 94925       1
-    ##  4 1_1_2… 1_2_R2  BRUROOT… R2           1        2 2020-04-21 94925       1
-    ##  5 1_1_2… 1_2_R3  BRUROOT… R3           1        2 2020-04-21 94925       1
-    ##  6 1_1_2… 1_2_R4  BRUROOT… R4           1        2 2020-04-21 94925       1
-    ##  7 1_1_2… 1_2_R5  BRUROOT… R5           1        2 2020-04-21 94925       1
-    ##  8 1_1_2… 1_2_R6  BRUROOT… R6           1        2 2020-04-21 94925       1
-    ##  9 1_1_2… 1_2_R7  BRUROOT… R7           1        2 2020-04-21 94925       1
-    ## 10 1_1_2… 1_2_R8  BRUROOT… R8           1        2 2020-04-21 94925       1
+    ##  1 1_1_1… 1_1_R1… BRUROOT… R1           1        1 2020-04-21 94911       1
+    ##  2 1_1_1… 1_1_R2… BRUROOT… R2           1        1 2020-04-21 94911       1
+    ##  3 1_1_2… 1_2_R1… BRUROOT… R1           1        2 2020-04-21 94925       1
+    ##  4 1_1_2… 1_2_R2… BRUROOT… R2           1        2 2020-04-21 94925       1
+    ##  5 1_1_2… 1_2_R3… BRUROOT… R3           1        2 2020-04-21 94925       1
+    ##  6 1_1_2… 1_2_R4… BRUROOT… R4           1        2 2020-04-21 94925       1
+    ##  7 1_1_2… 1_2_R5… BRUROOT… R5           1        2 2020-04-21 94925       1
+    ##  8 1_1_2… 1_2_R6… BRUROOT… R6           1        2 2020-04-21 94925       1
+    ##  9 1_1_2… 1_2_R7… BRUROOT… R7           1        2 2020-04-21 94925       1
+    ## 10 1_1_2… 1_2_R8… BRUROOT… R8           1        2 2020-04-21 94925       1
     ## # … with 86,619 more rows, and 29 more variables: DataGatherer <chr>,
     ## #   BirthSession <dbl>, DeathSession <dbl>, TotLength_mm <dbl>,
     ## #   TotProjArea_mm2 <dbl>, TotSurfArea_mm2 <dbl>, TotAvgDiam_mm <dbl>,
@@ -203,20 +203,20 @@ gain_depth <- gain_depth %>%
 gain_depth %>% summary()
 ```
 
-    ##       Tube         Location         Month           name          
-    ##  Min.   : 1.0   Min.   : 1.00   Min.   : 5.00   Length:16255      
-    ##  1st Qu.: 7.0   1st Qu.:10.00   1st Qu.: 6.00   Class :character  
-    ##  Median :12.0   Median :21.00   Median : 8.00   Mode  :character  
-    ##  Mean   :12.4   Mean   :21.39   Mean   : 8.04                     
-    ##  3rd Qu.:18.0   3rd Qu.:32.00   3rd Qu.:10.00                     
-    ##  Max.   :24.0   Max.   :44.00   Max.   :11.00                     
-    ##   treatment          root_growth         new_roots          gross_gain       
-    ##  Length:16255       Min.   : 0.00000   Min.   :  0.0000   Min.   :  0.00000  
-    ##  Class :character   1st Qu.: 0.00000   1st Qu.:  0.0000   1st Qu.:  0.03277  
-    ##  Mode  :character   Median : 0.04462   Median :  0.0422   Median :  0.38890  
-    ##                     Mean   : 1.20244   Mean   :  2.2153   Mean   :  3.41773  
-    ##                     3rd Qu.: 0.61790   3rd Qu.:  0.8222   3rd Qu.:  2.09355  
-    ##                     Max.   :55.05780   Max.   :191.7091   Max.   :195.50220
+    ##       Tube         Location         Month            name          
+    ##  Min.   : 1.0   Min.   : 1.00   Min.   : 5.000   Length:16252      
+    ##  1st Qu.: 7.0   1st Qu.:10.00   1st Qu.: 6.000   Class :character  
+    ##  Median :12.0   Median :21.00   Median : 8.000   Mode  :character  
+    ##  Mean   :12.4   Mean   :21.39   Mean   : 8.039                     
+    ##  3rd Qu.:18.0   3rd Qu.:32.00   3rd Qu.:10.000                     
+    ##  Max.   :24.0   Max.   :44.00   Max.   :11.000                     
+    ##   treatment          root_growth         new_roots           gross_gain      
+    ##  Length:16252       Min.   : 0.00000   Min.   :  0.00000   Min.   :  0.0000  
+    ##  Class :character   1st Qu.: 0.00000   1st Qu.:  0.00000   1st Qu.:  0.0327  
+    ##  Mode  :character   Median : 0.04447   Median :  0.04245   Median :  0.3885  
+    ##                     Mean   : 1.20122   Mean   :  2.21664   Mean   :  3.4179  
+    ##                     3rd Qu.: 0.61790   3rd Qu.:  0.82409   3rd Qu.:  2.0940  
+    ##                     Max.   :55.05780   Max.   :191.70910   Max.   :195.5022
 
 ``` r
 # gross loss = loss in 'Alive' + 'Dead' + 'Gone' 
@@ -250,18 +250,18 @@ summary(loss_depth)
 ```
 
     ##       Tube          Location         Month            name          
-    ##  Min.   : 1.00   Min.   : 1.00   Min.   : 5.000   Length:11628      
+    ##  Min.   : 1.00   Min.   : 1.00   Min.   : 5.000   Length:11631      
     ##  1st Qu.: 7.00   1st Qu.: 8.00   1st Qu.: 6.000   Class :character  
     ##  Median :12.00   Median :19.00   Median : 8.000   Mode  :character  
-    ##  Mean   :12.57   Mean   :19.83   Mean   : 7.987                     
+    ##  Mean   :12.57   Mean   :19.82   Mean   : 7.988                     
     ##  3rd Qu.:18.00   3rd Qu.:30.00   3rd Qu.:10.000                     
     ##  Max.   :24.00   Max.   :44.00   Max.   :11.000                     
     ##   treatment            dg_roots         root_loss         gross_loss      
-    ##  Length:11628       Min.   : 0.0012   Min.   : 0.0000   Min.   :  0.0012  
+    ##  Length:11631       Min.   : 0.0012   Min.   : 0.0000   Min.   :  0.0012  
     ##  Class :character   1st Qu.: 0.2394   1st Qu.: 0.0000   1st Qu.:  0.3794  
-    ##  Mode  :character   Median : 0.6838   Median : 0.1011   Median :  1.0079  
-    ##                     Mean   : 3.2680   Mean   : 1.8182   Mean   :  5.0862  
-    ##                     3rd Qu.: 2.7437   3rd Qu.: 1.2390   3rd Qu.:  5.2337  
+    ##  Mode  :character   Median : 0.6838   Median : 0.1005   Median :  1.0077  
+    ##                     Mean   : 3.2679   Mean   : 1.8155   Mean   :  5.0834  
+    ##                     3rd Qu.: 2.7424   3rd Qu.: 1.2393   3rd Qu.:  5.2317  
     ##                     Max.   :94.6837   Max.   :63.2020   Max.   :140.3168
 
 ``` r
@@ -306,8 +306,8 @@ df1
     ##  2     1        1     5 control           11.3      NA         NA        NA  
     ##  3     1        1     6 control           62.3      37.7        1.78     47.2
     ##  4     1        1     7 control           76.2      37.9       24.0      76.2
-    ##  5     1        1     8 control           78.5       7.59      16.7      67.1
-    ##  6     1        1     9 control           36.6      11.6       53.6      36.6
+    ##  5     1        1     8 control           67.1       9.61      13.8      72.1
+    ##  6     1        1     9 control           36.6      11.6       53.6      25.2
     ##  7     1        1    10 control           65.6       9.52      23.3      22.8
     ##  8     1        1    11 control           77.7      18.6        6.40     77.7
     ##  9     1        2     4 control           27.0      NA         NA        NA  
@@ -332,7 +332,7 @@ ggplot(df1, aes(TotLength_mm, calc_net)) +
 with(df1, cor(calc_net, TotLength_mm, use = "complete.obs"))
 ```
 
-    ## [1] 0.9977771
+    ## [1] 0.9977984
 
 ![](production_turnover_files/figure-gfm/model%20gross%20change-1.png)<!-- -->
 
@@ -344,24 +344,24 @@ with(df1, cor(calc_net, TotLength_mm, use = "complete.obs"))
     ## 
     ## Scaled residuals: 
     ##     Min      1Q  Median      3Q     Max 
-    ## -3.3366 -0.6148 -0.1965  0.4938  4.2910 
+    ## -3.3418 -0.6145 -0.1949  0.4957  4.2912 
     ## 
     ## Random effects:
     ##  Groups   Name        Variance Std.Dev.
-    ##  Location (Intercept)  274.9   16.58   
-    ##  Tube     (Intercept)  745.0   27.30   
-    ##  Residual             1237.7   35.18   
+    ##  Location (Intercept)  275.7   16.60   
+    ##  Tube     (Intercept)  743.7   27.27   
+    ##  Residual             1237.5   35.18   
     ## Number of obs: 1007, groups:  Location, 44; Tube, 24
     ## 
     ## Fixed effects:
     ##                      Estimate Std. Error t value
-    ## (Intercept)           44.8324    10.1592   4.413
-    ## clippedyes            -5.1014    13.9212  -0.366
-    ## clippedyes:manureyes   0.9263    13.9121   0.067
+    ## (Intercept)           44.8500    10.1518   4.418
+    ## clippedyes            -5.0984    13.9091  -0.367
+    ## clippedyes:manureyes   0.8722    13.9000   0.063
     ## 
     ## Correlation of Fixed Effects:
     ##             (Intr) clppdy
-    ## clippedyes  -0.686       
+    ## clippedyes  -0.685       
     ## clppdys:mnr  0.000 -0.500
     ## fit warnings:
     ## fixed-effect model matrix is rank deficient so dropping 1 column / coefficient
@@ -370,24 +370,24 @@ with(df1, cor(calc_net, TotLength_mm, use = "complete.obs"))
     ## Formula: gg_sum ~ clipped + clipped:manure + (1 | Location) + (1 | Tube)
     ##    Data: d
     ## 
-    ## REML criterion at convergence: 10207.4
+    ## REML criterion at convergence: 10207.8
     ## 
     ## Scaled residuals: 
     ##     Min      1Q  Median      3Q     Max 
-    ## -3.8905 -0.6180 -0.1598  0.4761  5.2857 
+    ## -3.8898 -0.6181 -0.1600  0.4757  5.2847 
     ## 
     ## Random effects:
     ##  Groups   Name        Variance Std.Dev.
-    ##  Location (Intercept)  235.6   15.35   
-    ##  Tube     (Intercept)  933.3   30.55   
-    ##  Residual             1299.2   36.04   
+    ##  Location (Intercept)  236.3   15.37   
+    ##  Tube     (Intercept)  933.7   30.56   
+    ##  Residual             1299.6   36.05   
     ## Number of obs: 1007, groups:  Location, 44; Tube, 24
     ## 
     ## Fixed effects:
     ##                      Estimate Std. Error t value
-    ## (Intercept)            54.924     11.227   4.892
-    ## clippedyes             -8.539     15.532  -0.550
-    ## clippedyes:manureyes   -2.092     15.524  -0.135
+    ## (Intercept)            54.897     11.230   4.888
+    ## clippedyes             -8.502     15.536  -0.547
+    ## clippedyes:manureyes   -2.107     15.527  -0.136
     ## 
     ## Correlation of Fixed Effects:
     ##             (Intr) clppdy

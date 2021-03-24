@@ -15,13 +15,17 @@ knitr::opts_chunk$set(fig.height = 8, fig.width = 6)
 
 ```{r load packages and data}
 library(tidyverse)
+## Import corrected roots data
 df <- read_csv("data/processed_data/mr_roots_data_corrected.csv")
 
 library(readxl)
+## Import plot treatment data
 trt <- read_xlsx("data/treatments.xlsx")
 #cut
 #cut+manure
 #control
+
+
 
 ```
 
@@ -165,7 +169,7 @@ df <- df %>% mutate(
   )
 
 df <- left_join(df, trt, by = c("Tube" = "rhizotron_tube"))
-df
+# df
 ```
 
 ## Production and loss (change) of individual roots
@@ -381,6 +385,7 @@ ggplot(gc %>% filter(metric == measure), aes(Location*-1, value, color = name)) 
 ```
 
 Compare calculated gross change (gain - loss) from T_1_ to T_2_ to the observed total at T_2_ of root length for each window.
+
 ### Sanity Check
 ```{r sanity check gain loss, echo=T, fig.height=4, fig.width=4}
 
