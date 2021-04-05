@@ -384,7 +384,7 @@ ggplot(gc %>% filter(metric == measure), aes(Location*-1, value, color = name)) 
 
 ```
 
-Compare calculated gross change (gain - loss) from T_1_ to T_2_ to the observed total at T_2_ of root length for each window.
+Compare calculated gross change (gain - loss) from T~1~ to T~2~ to the observed total at T~2~ of root length for each window.
 
 ### Sanity Check
 ```{r sanity check gain loss, echo=T, fig.height=4, fig.width=4}
