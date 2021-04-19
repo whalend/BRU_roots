@@ -51,7 +51,7 @@ ggplot(soils20, aes(as.Date(date), vwc)) +
 ## Looks like late-April and May temperatures are the exact same values as vwc
 
 ## Need to make some corrections for these data to be usable
-## Add 20 to the values that are less than 10?
+### Data entry error on temperatures corrected by Stacy
 
 ## Look at soil vwc data Chris sent
 soil_vwc <- read_csv("data/soil_vwc2020.csv") %>% 
@@ -74,7 +74,6 @@ mr_soil_vwc <- left_join(soil_vwc_month, trt) %>%
 soil_temp <- read_xlsx("data/soil_temp_vwc/2020_temp_vwc/soil_temp2020.xlsx", sheet = 3) %>% select(-notes)
 soil_temp <- soil_temp %>% 
   mutate(Date = as.Date(date),
-         temp2 = ifelse(temp<10, temp+17, temp),
          plot_id = paste0(plot, loc),
          month_num = lubridate::month(Date))
 summary(soil_temp)
@@ -82,22 +81,19 @@ summary(soil_temp)
 ggplot() +
   geom_point(data = soil_vwc, aes(Date, vwc), color = "deepskyblue", size = 3) +
   geom_point(data = soil_temp, aes(Date, temp), color = "red", alpha = .5) +
-  ylab("Value for VWC and temperature") +
-  geom_point(data = soil_temp, aes(Date, temp2), color = "orange", alpha = .1)
+  ylab("Value for VWC and temperature")
 
 soil_temp_month <- soil_temp %>% 
   group_by(plot_id, month_num) %>% 
   summarise(avg_temp = mean(temp),
-            avg_temp2 = mean(temp2),
             max_temp = max(temp),
-            max_temp2 = max(temp2),
-            min_temp = min(temp),
-            min_temp2 = min(temp2))
+            min_temp = min(temp)
+            )
 
 mr_soil_temp <- left_join(soil_temp_month, trt) %>% 
   filter(!is.na(rhizotron_tube))
 
-ggplot(mr_soil_temp, aes(month_num, avg_temp2)) +
+ggplot(mr_soil_temp, aes(month_num, avg_temp)) +
   geom_point()
 
 
@@ -134,6 +130,10 @@ lai_data_month <- lai_data %>%
 
 mr_lai <- left_join(lai_data_month, trt) %>% 
   filter(!is.na(rhizotron_tube))
+
+qplot(month_num, avg_lai, data = mr_lai)
+## no LAI measurements prior to July
+
 
 ## Combine plot-level data
 mr_plot_data <- plyr::join_all(
