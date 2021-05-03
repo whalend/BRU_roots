@@ -714,6 +714,10 @@ sjPlot::plot_model(len_avg_d1a, show.values = T) +
   ggtitle("Avg length model fit to standardized variables")
 ```
 
+All interpretations with a grain of salt given the less than ideal model diagnostic plots.
+
+Some treatment effect from clipping and simulated grazing (clipping + manure) - clipping alone has shorter while simulated grazing has longer.
+
 #### Average root length model with LAI
 Subset of data with no NA values for LAI.
 
@@ -729,8 +733,9 @@ re <- sjPlot::plot_model(avg_len_lai_d1, type = "re")
 (re[[1]] + ggtitle("Random effects: depth")) 
 (re[[2]] + ggtitle("Random effects: tube")) 
 (re[[3]] + ggtitle("Random effects: month"))
-
 ```
+
+LAI doesn't have an effect on average root length but the error of the simulated grazing narrows in this reduced data set.
 
 <!-- #### Summed root length -->
 ```{r summed root length, eval=FALSE}
@@ -773,6 +778,7 @@ sjPlot::plot_model(diam_avg_d1a, show.values = T) +
   ggtitle("Avg diameter model with standardized variables")
 ```
 
+Average root diameter is larger in the mixed versus the bahia only composition. The scale of these coefficient estimates is super tiny - 100ths of millimeters. 
 
 #### Average root diameter model with LAI
 ```{r depth avg root diameter with LAI}
@@ -788,6 +794,8 @@ re <- sjPlot::plot_model(avg_diam_lai_d1, type = "re")
 (re[[3]] + ggtitle("Random effects: month"))
 # sjPlot::plot_model(avg_diam_lai_d3, type = "re")
 ```
+
+In the LAI subset, LAI, clipping, and composition all have an effect, with clipping and higher LAI having smaller average root diameter. How much might the correlation between clipped treatment and LAI be influencing each other? 
 
 <!-- #### Summed root diameter -->
 ```{r depth summed root diameter, eval=FALSE}
@@ -831,18 +839,19 @@ re <- sjPlot::plot_model(volume_avg_d3, type = "re")
 (re[[2]] + ggtitle("Random effects: tube")) 
 (re[[3]] + ggtitle("Random effects: month"))
 
-# Order of plots: depth, tube, month
-
 volume_avg_d3a <- lmer(avg_volume_mm3 ~ std2_avg_temp + std2_avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
 sjPlot::plot_model(volume_avg_d3a, show.values = T) +
   ggtitle("Avg volume model with standardized variables")
 ```
+
+Lower average volume in clipped but higher average volume in mixed composition. The mean point estimate for simulated grazing is solidly on the positive side.  
 
 #### Average root volume model with LAI
 ```{r depth avg root volume with LAI}
 ## add LAI into model - subset of data with no NA values for LAI
 avg_volume_lai_d3 <- lmer(avg_volume_mm3 ~ avg_temp + avg_vwc + avg_lai + composition + clipped + clipped:manure +  (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_lai_model_data)
 plot(avg_volume_lai_d3)
+
 summary(avg_volume_lai_d3)
 sjPlot::plot_model(avg_volume_lai_d3, show.values = T)
 re <- sjPlot::plot_model(avg_volume_lai_d3, type = "re")
@@ -852,6 +861,8 @@ re <- sjPlot::plot_model(avg_volume_lai_d3, type = "re")
 
 ## Need to think on handling & interpretation of LAI in clipped plots.
 ```
+
+The LAI model result has higher LAI resulting in lower average root volume, and a statistically significant simulated grazing effect.
 
 <!-- #### Summed root volume -->
 ```{r depth summed root volume, eval=FALSE}
@@ -908,7 +919,7 @@ Model pseudo-code:
 
 `lmer(root metric ~ temperature metric + avg_vwc + clipped + clipped:manure + composition + (1|block/Tube) + (1|month_num), data = tube_model_data)`
 
-In coming back to this I noticed I used block in the random effect here but not in the depth models
+In coming back to this I noticed I used block in the random effect here but not in the depth models...
 
 #### Average root length
 
@@ -935,11 +946,15 @@ sjPlot::plot_model(len_avg_m1a, type = "est", show.values = T) +
   ggtitle("Length model with standardized variables")
 ```
 
+Aggregating up to the tube level tidies up the diagnostic plots in most cases.
+
+Negative effect of clipping - shorter roots.
+
 #### Average root length model with LAI
 ```{r tube avg length with LAI}
 len_avg_lai_m1 <- lmer(avg_length_mm ~ max_temp + avg_vwc + avg_lai + clipped + clipped:manure + composition + (1|block/Tube) + (1|month_num), data = tube_lai_model_data)
-plot(len_avg_lai_m1)
-DHARMa::simulateResiduals(len_avg_lai_m1) %>% plot()
+# plot(len_avg_lai_m1)
+# DHARMa::simulateResiduals(len_avg_lai_m1) %>% plot()
 
 summary(len_avg_lai_m1)
 sjPlot::plot_model(len_avg_lai_m1, type = "est", show.values = T)
@@ -949,6 +964,7 @@ re[[2]] + ggtitle("Random effects: block")
 re[[3]] + ggtitle("Random effects: month")
 ```
 
+No effect of LAI. Negative effect of clipping now with larger error, positive effect of simulated grazing.
 
 <!-- #### Summed root length -->
 ```{r tube summed root length, eval=FALSE}
@@ -1009,18 +1025,21 @@ sjPlot::plot_model(vol_avg_m1a, type = "est", show.values = T) +
   ggtitle("Volume model with standardized variables")
 ```
 
+Negative effect of clipping, positive direction for simulated grazing.
+
 #### Average root volume model with LAI
 ```{r tube avg volume with LAI}
 vol_avg_lai_m1 <- lmer(avg_volume_mm3 ~ max_temp + avg_vwc + avg_lai + clipped + clipped:manure + (1|block/Tube) + (1|month_num), data = tube_model_data)
+
 summary(vol_avg_lai_m1)
 sjPlot::plot_model(vol_avg_lai_m1, type = "est", show.values = T)
 re <- sjPlot::plot_model(vol_avg_lai_m1, type = "re", grid = T)
 (re[[1]] + ggtitle("Random effects: tube:block")) 
 (re[[2]] + ggtitle("Random effects: block")) 
 (re[[3]] + ggtitle("Random effects: month"))
-
 ```
 
+No effect of LAI. Negative effect of clipping, positive effect of simulated grazing.
 
 ```{r tube summed volume, eval=FALSE}
 vol_tot_m1 <- lmer(tot_volume_mm3 ~ max_temp + avg_vwc + clipped + clipped:manure + (1|block/Tube) + (1|month_num), data = tube_model_data)
@@ -1058,6 +1077,8 @@ sjPlot::plot_model(dia_avg_m1a, type = "est", show.values = T) +
   ggtitle("Diameter model with standardized variables")
 ```
 
+Maybe a tiny influence of clipping on average root diameter.
+
 #### Average root diameter model with LAI
 ```{r avg root diam with LAI}
 dia_avg_lai_m1 <- lmer(avg_diam_mm ~ max_temp + avg_vwc + avg_lai + clipped + clipped:manure + (1|block/Tube) + (1|month_num), data = tube_lai_model_data)
@@ -1072,6 +1093,8 @@ re <- sjPlot::plot_model(dia_avg_lai_m1, type = "re", grid = T)
 (re[[2]] + ggtitle("Random effects: block")) 
 (re[[3]] + ggtitle("Random effects: month"))
 ```
+
+Ugly quantiles diagnostic plots. Maybe that effect of clipping is real, I doubt the temperature effect because it hasn't been a factor in any other models.
 
 
 ```{r tube summed diameter, eval=FALSE}

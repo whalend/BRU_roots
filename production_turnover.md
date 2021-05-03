@@ -386,6 +386,12 @@ The model pseudocode is:
 
 ![](production_turnover_files/figure-gfm/depth%20avg%20root%20length-3.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20length-4.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20length-5.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20length-6.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20length-7.png)<!-- -->
 
+All interpretations with a grain of salt given the less than ideal model
+diagnostic plots.
+
+Some treatment effect from clipping and simulated grazing (clipping +
+manure) - clipping alone has shorter while simulated grazing has longer.
+
 #### Average root length model with LAI
 
 Subset of data with no NA values for LAI.
@@ -436,6 +442,9 @@ Is LAI confounded with the “clipped” treatment?
     ## boundary (singular) fit: see ?isSingular
 
 ![](production_turnover_files/figure-gfm/depth%20avg%20root%20length%20LAI-1.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20length%20LAI-2.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20length%20LAI-3.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20length%20LAI-4.png)<!-- -->
+
+LAI doesn’t have an effect on average root length but the error of the
+simulated grazing narrows in this reduced data set.
 
 <!-- #### Summed root length -->
 
@@ -488,6 +497,10 @@ Is LAI confounded with the “clipped” treatment?
 
 ![](production_turnover_files/figure-gfm/depth%20avg%20root%20diameter-3.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20diameter-4.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20diameter-5.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20diameter-6.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20diameter-7.png)<!-- -->
 
+Average root diameter is larger in the mixed versus the bahia only
+composition. The scale of these coefficient estimates is super tiny -
+100ths of millimeters.
+
 #### Average root diameter model with LAI
 
     ## Linear mixed model fit by REML ['lmerMod']
@@ -532,6 +545,11 @@ Is LAI confounded with the “clipped” treatment?
     ## fixed-effect model matrix is rank deficient so dropping 1 column / coefficient
 
 ![](production_turnover_files/figure-gfm/depth%20avg%20root%20diameter%20with%20LAI-1.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20diameter%20with%20LAI-2.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20diameter%20with%20LAI-3.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20diameter%20with%20LAI-4.png)<!-- -->
+
+In the LAI subset, LAI, clipping, and composition all have an effect,
+with clipping and higher LAI having smaller average root diameter. How
+much might the correlation between clipped treatment and LAI be
+influencing each other?
 
 <!-- #### Summed root diameter -->
 
@@ -584,6 +602,10 @@ Is LAI confounded with the “clipped” treatment?
 
 ![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume-3.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume-4.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume-5.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume-6.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume-7.png)<!-- -->
 
+Lower average volume in clipped but higher average volume in mixed
+composition. The mean point estimate for simulated grazing is solidly on
+the positive side.
+
 #### Average root volume model with LAI
 
 ![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume%20with%20LAI-1.png)<!-- -->
@@ -630,6 +652,9 @@ Is LAI confounded with the “clipped” treatment?
 
 ![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume%20with%20LAI-2.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume%20with%20LAI-3.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume%20with%20LAI-4.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume%20with%20LAI-5.png)<!-- -->
 
+The LAI model result has higher LAI resulting in lower average root
+volume, and a statistically significant simulated grazing effect.
+
 <!-- #### Summed root volume -->
 
 ### Models for roots aggregated to tubes
@@ -644,7 +669,7 @@ Model pseudo-code:
 `lmer(root metric ~ temperature metric + avg_vwc + clipped + clipped:manure + composition + (1|block/Tube) + (1|month_num), data = tube_model_data)`
 
 In coming back to this I noticed I used block in the random effect here
-but not in the depth models
+but not in the depth models…
 
 #### Average root length
 
@@ -695,9 +720,12 @@ but not in the depth models
 
 ![](production_turnover_files/figure-gfm/tube%20avg%20root%20length-3.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20root%20length-4.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20root%20length-5.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20root%20length-6.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20root%20length-7.png)<!-- -->
 
-#### Average root length model with LAI
+Aggregating up to the tube level tidies up the diagnostic plots in most
+cases.
 
-![](production_turnover_files/figure-gfm/tube%20avg%20length%20with%20LAI-1.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20length%20with%20LAI-2.png)<!-- -->
+Negative effect of clipping - shorter roots.
+
+#### Average root length model with LAI
 
     ## Linear mixed model fit by REML ['lmerMod']
     ## Formula: 
@@ -742,7 +770,10 @@ but not in the depth models
     ## optimizer (nloptwrap) convergence code: 0 (OK)
     ## boundary (singular) fit: see ?isSingular
 
-![](production_turnover_files/figure-gfm/tube%20avg%20length%20with%20LAI-3.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20length%20with%20LAI-4.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20length%20with%20LAI-5.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20length%20with%20LAI-6.png)<!-- -->
+![](production_turnover_files/figure-gfm/tube%20avg%20length%20with%20LAI-1.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20length%20with%20LAI-2.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20length%20with%20LAI-3.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20length%20with%20LAI-4.png)<!-- -->
+
+No effect of LAI. Negative effect of clipping now with larger error,
+positive effect of simulated grazing.
 
 <!-- #### Summed root length -->
 <!-- #### Summed root length model with LAI -->
@@ -794,6 +825,8 @@ but not in the depth models
 
 ![](production_turnover_files/figure-gfm/tube%20avg%20volume-3.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20volume-4.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20volume-5.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20volume-6.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20volume-7.png)<!-- -->
 
+Negative effect of clipping, positive direction for simulated grazing.
+
 #### Average root volume model with LAI
 
     ## Linear mixed model fit by REML ['lmerMod']
@@ -836,6 +869,9 @@ but not in the depth models
     ## fixed-effect model matrix is rank deficient so dropping 1 column / coefficient
 
 ![](production_turnover_files/figure-gfm/tube%20avg%20volume%20with%20LAI-1.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20volume%20with%20LAI-2.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20volume%20with%20LAI-3.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20volume%20with%20LAI-4.png)<!-- -->
+
+No effect of LAI. Negative effect of clipping, positive effect of
+simulated grazing.
 
 #### Average root diameter
 
@@ -884,6 +920,8 @@ but not in the depth models
 
 ![](production_turnover_files/figure-gfm/tube%20avg%20diameter-3.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20diameter-4.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20diameter-5.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20diameter-6.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20diameter-7.png)<!-- -->
 
+Maybe a tiny influence of clipping on average root diameter.
+
 #### Average root diameter model with LAI
 
 ![](production_turnover_files/figure-gfm/avg%20root%20diam%20with%20LAI-1.png)<!-- -->![](production_turnover_files/figure-gfm/avg%20root%20diam%20with%20LAI-2.png)<!-- -->
@@ -928,6 +966,10 @@ but not in the depth models
     ## fixed-effect model matrix is rank deficient so dropping 1 column / coefficient
 
 ![](production_turnover_files/figure-gfm/avg%20root%20diam%20with%20LAI-3.png)<!-- -->![](production_turnover_files/figure-gfm/avg%20root%20diam%20with%20LAI-4.png)<!-- -->![](production_turnover_files/figure-gfm/avg%20root%20diam%20with%20LAI-5.png)<!-- -->![](production_turnover_files/figure-gfm/avg%20root%20diam%20with%20LAI-6.png)<!-- -->
+
+Ugly quantiles diagnostic plots. Maybe that effect of clipping is real,
+I doubt the temperature effect because it hasn’t been a factor in any
+other models.
 
 ## Number of roots across size bins
 
