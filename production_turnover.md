@@ -337,7 +337,7 @@ The model pseudocode is:
 
 `lmer(root metric ~ temperature metric + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)`
 
-#### Average root length
+#### Root length
 
     ##            df      AIC
     ## len_avg_d1 10 42847.78
@@ -392,6 +392,8 @@ diagnostic plots.
 Some treatment effect from clipping and simulated grazing (clipping +
 manure) - clipping alone has shorter while simulated grazing has longer.
 
+#### Summed root length
+
 #### Average root length model with LAI
 
 Subset of data with no NA values for LAI.
@@ -399,54 +401,84 @@ Subset of data with no NA values for LAI.
 Is LAI confounded with the “clipped” treatment?
 
     ## Linear mixed model fit by REML ['lmerMod']
-    ## Formula: 
-    ## avg_length_mm ~ max_temp + avg_vwc + avg_lai + clipped + clipped:manure +  
-    ##     composition + avg_lai + (1 | depth) + (1 | Tube) + (1 | month_num)
+    ## Formula: avg_length_mm ~ max_temp + avg_vwc + avg_lai + composition +  
+    ##     (1 | depth) + (1 | Tube) + (1 | month_num)
     ##    Data: depth_lai_model_data
     ## 
-    ## REML criterion at convergence: 27424.8
+    ## REML criterion at convergence: 27430.5
     ## 
     ## Scaled residuals: 
     ##     Min      1Q  Median      3Q     Max 
-    ## -1.9522 -0.6396 -0.1869  0.4408  7.8216 
+    ## -1.9605 -0.6404 -0.1846  0.4374  7.8244 
     ## 
     ## Random effects:
     ##  Groups    Name        Variance Std.Dev.
-    ##  depth     (Intercept)  0.6994  0.8363  
-    ##  Tube      (Intercept)  0.6188  0.7866  
+    ##  depth     (Intercept)  0.7014  0.8375  
+    ##  Tube      (Intercept)  0.7331  0.8562  
     ##  month_num (Intercept)  0.0000  0.0000  
-    ##  Residual              18.6027  4.3131  
+    ##  Residual              18.6013  4.3129  
     ## Number of obs: 4738, groups:  depth, 44; Tube, 24; month_num, 5
     ## 
     ## Fixed effects:
-    ##                       Estimate Std. Error t value
-    ## (Intercept)           7.732581   0.976962   7.915
-    ## max_temp             -0.004289   0.037096  -0.116
-    ## avg_vwc               0.002821   0.008341   0.338
-    ## avg_lai              -0.008180   0.117453  -0.070
-    ## clippedyes           -0.831267   0.593703  -1.400
-    ## compositionmixed     -0.032332   0.361284  -0.089
-    ## clippedyes:manureyes  0.924848   0.421859   2.192
+    ##                   Estimate Std. Error t value
+    ## (Intercept)       7.586437   0.959829   7.904
+    ## max_temp         -0.011956   0.035427  -0.337
+    ## avg_vwc           0.001429   0.008009   0.178
+    ## avg_lai           0.051306   0.082140   0.625
+    ## compositionmixed -0.087212   0.379167  -0.230
     ## 
     ## Correlation of Fixed Effects:
-    ##             (Intr) mx_tmp avg_vw avg_la clppdy cmpstn
-    ## max_temp    -0.810                                   
-    ## avg_vwc     -0.086  0.195                            
-    ## avg_lai     -0.087 -0.394 -0.394                     
-    ## clippedyes  -0.203 -0.290 -0.269  0.701              
-    ## compostnmxd -0.183  0.157  0.115 -0.294 -0.207       
-    ## clppdys:mnr  0.009  0.011  0.001 -0.039 -0.383  0.012
-    ## fit warnings:
-    ## fixed-effect model matrix is rank deficient so dropping 1 column / coefficient
+    ##             (Intr) mx_tmp avg_vw avg_la
+    ## max_temp    -0.938                     
+    ## avg_vwc     -0.162  0.122              
+    ## avg_lai      0.121 -0.272 -0.289       
+    ## compostnmxd -0.253  0.094  0.055 -0.195
     ## optimizer (nloptwrap) convergence code: 0 (OK)
     ## boundary (singular) fit: see ?isSingular
 
 ![](production_turnover_files/figure-gfm/depth%20avg%20root%20length%20LAI-1.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20length%20LAI-2.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20length%20LAI-3.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20length%20LAI-4.png)<!-- -->
 
-LAI doesn’t have an effect on average root length but the error of the
-simulated grazing narrows in this reduced data set.
+No effect of LAI.
 
-<!-- #### Summed root length -->
+#### Summed root length model with LAI
+
+    ## Linear mixed model fit by REML ['lmerMod']
+    ## Formula: tot_length_mm ~ max_temp + avg_vwc + avg_lai + composition +  
+    ##     (1 | depth) + (1 | Tube) + (1 | month_num)
+    ##    Data: depth_model_data
+    ## 
+    ## REML criterion at convergence: 44257.1
+    ## 
+    ## Scaled residuals: 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -4.2137 -0.6643 -0.1412  0.5437  5.7516 
+    ## 
+    ## Random effects:
+    ##  Groups    Name        Variance Std.Dev.
+    ##  depth     (Intercept)  20.62    4.541  
+    ##  Tube      (Intercept) 312.53   17.679  
+    ##  month_num (Intercept) 101.98   10.098  
+    ##  Residual              642.79   25.353  
+    ## Number of obs: 4738, groups:  depth, 44; Tube, 24; month_num, 5
+    ## 
+    ## Fixed effects:
+    ##                  Estimate Std. Error t value
+    ## (Intercept)      119.8844    26.9438   4.449
+    ## max_temp          -2.8907     0.9715  -2.976
+    ## avg_vwc            0.2700     0.3003   0.899
+    ## avg_lai           -2.0620     0.7376  -2.796
+    ## compositionmixed -11.3516     7.3009  -1.555
+    ## 
+    ## Correlation of Fixed Effects:
+    ##             (Intr) mx_tmp avg_vw avg_la
+    ## max_temp    -0.957                     
+    ## avg_vwc     -0.170  0.044              
+    ## avg_lai     -0.078  0.011  0.101       
+    ## compostnmxd -0.196  0.071 -0.012 -0.085
+
+![](production_turnover_files/figure-gfm/depth%20summed%20root%20length%20LAI-1.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20summed%20root%20length%20LAI-2.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20summed%20root%20length%20LAI-3.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20summed%20root%20length%20LAI-4.png)<!-- -->
+
+Pretty strong negative relationship with LAI and maximum temperature.
 
 #### Average root diameter
 
@@ -504,52 +536,42 @@ composition. The scale of these coefficient estimates is super tiny -
 #### Average root diameter model with LAI
 
     ## Linear mixed model fit by REML ['lmerMod']
-    ## Formula: 
-    ## avg_diam_mm ~ max_temp + avg_vwc + avg_lai + clipped + clipped:manure +  
-    ##     composition + avg_lai + (1 | depth) + (1 | Tube) + (1 | month_num)
+    ## Formula: avg_diam_mm ~ max_temp + avg_vwc + avg_lai + composition + (1 |  
+    ##     depth) + (1 | Tube) + (1 | month_num)
     ##    Data: depth_lai_model_data
     ## 
-    ## REML criterion at convergence: -9756.9
+    ## REML criterion at convergence: -9764.1
     ## 
     ## Scaled residuals: 
     ##     Min      1Q  Median      3Q     Max 
-    ## -2.4457 -0.5952 -0.1674  0.3857 11.5301 
+    ## -2.3940 -0.5977 -0.1650  0.3855 11.5469 
     ## 
     ## Random effects:
     ##  Groups    Name        Variance  Std.Dev.
     ##  depth     (Intercept) 0.0001092 0.01045 
-    ##  Tube      (Intercept) 0.0005271 0.02296 
-    ##  month_num (Intercept) 0.0003514 0.01875 
-    ##  Residual              0.0071912 0.08480 
+    ##  Tube      (Intercept) 0.0006695 0.02588 
+    ##  month_num (Intercept) 0.0004129 0.02032 
+    ##  Residual              0.0071901 0.08479 
     ## Number of obs: 4738, groups:  depth, 44; Tube, 24; month_num, 5
     ## 
     ## Fixed effects:
-    ##                        Estimate Std. Error t value
-    ## (Intercept)           0.3938085  0.0757925   5.196
-    ## max_temp             -0.0037211  0.0027963  -1.331
-    ## avg_vwc               0.0003658  0.0007747   0.472
-    ## avg_lai              -0.0072587  0.0024824  -2.924
-    ## clippedyes           -0.0389080  0.0147909  -2.631
-    ## compositionmixed      0.0444821  0.0100373   4.432
-    ## clippedyes:manureyes  0.0075093  0.0118842   0.632
+    ##                    Estimate Std. Error t value
+    ## (Intercept)       0.3900039  0.0778263   5.011
+    ## max_temp         -0.0048092  0.0028692  -1.676
+    ## avg_vwc           0.0004901  0.0008093   0.606
+    ## avg_lai          -0.0034153  0.0020101  -1.699
+    ## compositionmixed  0.0406241  0.0110821   3.666
     ## 
     ## Correlation of Fixed Effects:
-    ##             (Intr) mx_tmp avg_vw avg_la clppdy cmpstn
-    ## max_temp    -0.968                                   
-    ## avg_vwc     -0.163  0.047                            
-    ## avg_lai     -0.131 -0.013  0.031                     
-    ## clippedyes  -0.089 -0.065  0.041  0.592              
-    ## compostnmxd -0.179  0.154 -0.011 -0.210 -0.134       
-    ## clppdys:mnr  0.028 -0.017 -0.052 -0.036 -0.423  0.006
-    ## fit warnings:
-    ## fixed-effect model matrix is rank deficient so dropping 1 column / coefficient
+    ##             (Intr) mx_tmp avg_vw avg_la
+    ## max_temp    -0.980                     
+    ## avg_vwc     -0.163  0.048              
+    ## avg_lai     -0.095  0.041  0.032       
+    ## compostnmxd -0.190  0.134 -0.009 -0.147
 
 ![](production_turnover_files/figure-gfm/depth%20avg%20root%20diameter%20with%20LAI-1.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20diameter%20with%20LAI-2.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20diameter%20with%20LAI-3.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20diameter%20with%20LAI-4.png)<!-- -->
 
-In the LAI subset, LAI, clipping, and composition all have an effect,
-with clipping and higher LAI having smaller average root diameter. How
-much might the correlation between clipped treatment and LAI be
-influencing each other?
+A sort of negative relationship with LAI.
 
 <!-- #### Summed root diameter -->
 
@@ -612,48 +634,41 @@ the positive side.
 
     ## Linear mixed model fit by REML ['lmerMod']
     ## Formula: avg_volume_mm3 ~ avg_temp + avg_vwc + avg_lai + composition +  
-    ##     clipped + clipped:manure + (1 | depth) + (1 | Tube) + (1 |      month_num)
+    ##     (1 | depth) + (1 | Tube) + (1 | month_num)
     ##    Data: depth_lai_model_data
     ## 
-    ## REML criterion at convergence: 12842.5
+    ## REML criterion at convergence: 12849.9
     ## 
     ## Scaled residuals: 
     ##     Min      1Q  Median      3Q     Max 
-    ## -1.2612 -0.5264 -0.2595  0.1965 13.4663 
+    ## -1.2692 -0.5259 -0.2584  0.1877 13.4760 
     ## 
     ## Random effects:
     ##  Groups    Name        Variance Std.Dev.
-    ##  depth     (Intercept) 0.014138 0.11890 
-    ##  Tube      (Intercept) 0.031006 0.17609 
-    ##  month_num (Intercept) 0.001886 0.04342 
-    ##  Residual              0.856850 0.92566 
+    ##  depth     (Intercept) 0.014171 0.11904 
+    ##  Tube      (Intercept) 0.047248 0.21737 
+    ##  month_num (Intercept) 0.001493 0.03864 
+    ##  Residual              0.857380 0.92595 
     ## Number of obs: 4738, groups:  depth, 44; Tube, 24; month_num, 5
     ## 
     ## Fixed effects:
-    ##                       Estimate Std. Error t value
-    ## (Intercept)           0.756602   0.242429   3.121
-    ## avg_temp              0.011975   0.009215   1.300
-    ## avg_vwc               0.002512   0.002914   0.862
-    ## avg_lai              -0.069169   0.025863  -2.674
-    ## compositionmixed      0.244455   0.080208   3.048
-    ## clippedyes           -0.484522   0.131060  -3.697
-    ## clippedyes:manureyes  0.202467   0.093956   2.155
+    ##                   Estimate Std. Error t value
+    ## (Intercept)       0.538682   0.221083   2.437
+    ## avg_temp          0.006846   0.008454   0.810
+    ## avg_vwc           0.001146   0.002693   0.425
+    ## avg_lai          -0.016255   0.019444  -0.836
+    ## compositionmixed  0.197473   0.094404   2.092
     ## 
     ## Correlation of Fixed Effects:
-    ##             (Intr) avg_tm avg_vw avg_la cmpstn clppdy
-    ## avg_temp    -0.836                                   
-    ## avg_vwc     -0.101  0.071                            
-    ## avg_lai     -0.181 -0.261 -0.219                     
-    ## compostnmxd -0.145  0.123  0.058 -0.284              
-    ## clippedyes  -0.258 -0.191 -0.141  0.695 -0.198       
-    ## clppdys:mnr  0.018  0.002 -0.015 -0.039  0.011 -0.386
-    ## fit warnings:
-    ## fixed-effect model matrix is rank deficient so dropping 1 column / coefficient
+    ##             (Intr) avg_tm avg_vw avg_la
+    ## avg_temp    -0.927                     
+    ## avg_vwc     -0.151  0.051              
+    ## avg_lai      0.046 -0.206 -0.182       
+    ## compostnmxd -0.251  0.076  0.029 -0.181
 
 ![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume%20with%20LAI-2.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume%20with%20LAI-3.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume%20with%20LAI-4.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume%20with%20LAI-5.png)<!-- -->
 
-The LAI model result has higher LAI resulting in lower average root
-volume, and a statistically significant simulated grazing effect.
+No effect of LAI.
 
 <!-- #### Summed root volume -->
 
@@ -728,52 +743,45 @@ Negative effect of clipping - shorter roots.
 #### Average root length model with LAI
 
     ## Linear mixed model fit by REML ['lmerMod']
-    ## Formula: 
-    ## avg_length_mm ~ max_temp + avg_vwc + avg_lai + clipped + clipped:manure +  
-    ##     composition + (1 | block/Tube) + (1 | month_num)
+    ## Formula: avg_length_mm ~ max_temp + avg_vwc + avg_lai + composition +  
+    ##     (1 | block/Tube) + (1 | month_num)
     ##    Data: tube_lai_model_data
     ## 
-    ## REML criterion at convergence: 314.1
+    ## REML criterion at convergence: 319.4
     ## 
     ## Scaled residuals: 
     ##     Min      1Q  Median      3Q     Max 
-    ## -6.0300 -0.3742  0.1175  0.3593  3.7379 
+    ## -5.8937 -0.3526  0.0745  0.3408  3.8631 
     ## 
     ## Random effects:
     ##  Groups     Name        Variance Std.Dev.
-    ##  Tube:block (Intercept) 0.23170  0.4813  
-    ##  block      (Intercept) 0.03669  0.1915  
+    ##  Tube:block (Intercept) 0.27007  0.5197  
+    ##  block      (Intercept) 0.05703  0.2388  
     ##  month_num  (Intercept) 0.00000  0.0000  
-    ##  Residual               0.51850  0.7201  
+    ##  Residual               0.52232  0.7227  
     ## Number of obs: 124, groups:  Tube:block, 24; block, 8; month_num, 5
     ## 
     ## Fixed effects:
-    ##                      Estimate Std. Error t value
-    ## (Intercept)           8.93464    0.97970   9.120
-    ## max_temp             -0.06904    0.03755  -1.839
-    ## avg_vwc               0.01102    0.00867   1.271
-    ## avg_lai               0.01892    0.11000   0.172
-    ## clippedyes           -0.93221    0.48438  -1.925
-    ## compositionmixed     -0.12065    0.29061  -0.415
-    ## clippedyes:manureyes  0.58766    0.28863   2.036
+    ##                   Estimate Std. Error t value
+    ## (Intercept)       8.703486   0.974172   8.934
+    ## max_temp         -0.084796   0.036071  -2.351
+    ## avg_vwc           0.007646   0.008298   0.921
+    ## avg_lai           0.149902   0.063098   2.376
+    ## compositionmixed -0.244656   0.306761  -0.798
     ## 
     ## Correlation of Fixed Effects:
-    ##             (Intr) mx_tmp avg_vw avg_la clppdy cmpstn
-    ## max_temp    -0.865                                   
-    ## avg_vwc     -0.096  0.176                            
-    ## avg_lai     -0.112 -0.330 -0.370                     
-    ## clippedyes  -0.161 -0.282 -0.288  0.803              
-    ## compostnmxd -0.148  0.174  0.125 -0.350 -0.284       
-    ## clppdys:mnr  0.013  0.013 -0.004 -0.055 -0.340  0.021
-    ## fit warnings:
-    ## fixed-effect model matrix is rank deficient so dropping 1 column / coefficient
+    ##             (Intr) mx_tmp avg_vw avg_la
+    ## max_temp    -0.966                     
+    ## avg_vwc     -0.158  0.097              
+    ## avg_lai      0.058 -0.169 -0.225       
+    ## compostnmxd -0.218  0.090  0.038 -0.187
     ## optimizer (nloptwrap) convergence code: 0 (OK)
     ## boundary (singular) fit: see ?isSingular
 
 ![](production_turnover_files/figure-gfm/tube%20avg%20length%20with%20LAI-1.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20length%20with%20LAI-2.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20length%20with%20LAI-3.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20length%20with%20LAI-4.png)<!-- -->
 
-No effect of LAI. Negative effect of clipping now with larger error,
-positive effect of simulated grazing.
+Positive relationship between root length and LAI. Negative relationship
+with maximum temperature.
 
 <!-- #### Summed root length -->
 <!-- #### Summed root length model with LAI -->
@@ -825,53 +833,48 @@ positive effect of simulated grazing.
 
 ![](production_turnover_files/figure-gfm/tube%20avg%20volume-3.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20volume-4.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20volume-5.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20volume-6.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20volume-7.png)<!-- -->
 
-Negative effect of clipping, positive direction for simulated grazing.
+Negative effect of clipping, positive direction for simulated grazing
+and soil moisture (standardized).
 
 #### Average root volume model with LAI
 
     ## Linear mixed model fit by REML ['lmerMod']
-    ## Formula: 
-    ## avg_volume_mm3 ~ max_temp + avg_vwc + avg_lai + clipped + clipped:manure +  
+    ## Formula: avg_volume_mm3 ~ max_temp + avg_vwc + avg_lai + composition +  
     ##     (1 | block/Tube) + (1 | month_num)
     ##    Data: tube_model_data
     ## 
-    ## REML criterion at convergence: -41.5
+    ## REML criterion at convergence: -35.2
     ## 
     ## Scaled residuals: 
     ##     Min      1Q  Median      3Q     Max 
-    ## -2.5236 -0.4207 -0.0775  0.3879  4.8464 
+    ## -2.7436 -0.4012 -0.0355  0.3573  4.8961 
     ## 
     ## Random effects:
     ##  Groups     Name        Variance  Std.Dev.
-    ##  Tube:block (Intercept) 0.0142528 0.1194  
-    ##  block      (Intercept) 0.0106267 0.1031  
-    ##  month_num  (Intercept) 0.0005061 0.0225  
-    ##  Residual               0.0232132 0.1524  
+    ##  Tube:block (Intercept) 2.564e-02 0.160134
+    ##  block      (Intercept) 4.067e-03 0.063770
+    ##  month_num  (Intercept) 1.644e-05 0.004054
+    ##  Residual               2.399e-02 0.154885
     ## Number of obs: 124, groups:  Tube:block, 24; block, 8; month_num, 5
     ## 
     ## Fixed effects:
-    ##                       Estimate Std. Error t value
-    ## (Intercept)           1.033716   0.251366   4.112
-    ## max_temp             -0.003715   0.009534  -0.390
-    ## avg_vwc               0.002765   0.002203   1.255
-    ## avg_lai              -0.033068   0.023802  -1.389
-    ## clippedyes           -0.368398   0.108529  -3.394
-    ## clippedyes:manureyes  0.159654   0.068569   2.328
+    ##                   Estimate Std. Error t value
+    ## (Intercept)       0.775948   0.214374   3.620
+    ## max_temp         -0.007021   0.007879  -0.891
+    ## avg_vwc           0.001267   0.001815   0.698
+    ## avg_lai           0.011884   0.016615   0.715
+    ## compositionmixed  0.118806   0.085642   1.387
     ## 
     ## Correlation of Fixed Effects:
-    ##             (Intr) mx_tmp avg_vw avg_la clppdy
-    ## max_temp    -0.877                            
-    ## avg_vwc     -0.089  0.129                     
-    ## avg_lai     -0.152 -0.268 -0.304              
-    ## clippedyes  -0.184 -0.229 -0.226  0.775       
-    ## clppdys:mnr  0.017  0.006 -0.011 -0.050 -0.353
-    ## fit warnings:
-    ## fixed-effect model matrix is rank deficient so dropping 1 column / coefficient
+    ##             (Intr) mx_tmp avg_vw avg_la
+    ## max_temp    -0.948                     
+    ## avg_vwc     -0.162  0.115              
+    ## avg_lai      0.085 -0.220 -0.267       
+    ## compostnmxd -0.251  0.084  0.044 -0.178
 
 ![](production_turnover_files/figure-gfm/tube%20avg%20volume%20with%20LAI-1.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20volume%20with%20LAI-2.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20volume%20with%20LAI-3.png)<!-- -->![](production_turnover_files/figure-gfm/tube%20avg%20volume%20with%20LAI-4.png)<!-- -->
 
-No effect of LAI. Negative effect of clipping, positive effect of
-simulated grazing.
+No effect of LAI.
 
 #### Average root diameter
 
@@ -927,49 +930,42 @@ Maybe a tiny influence of clipping on average root diameter.
 ![](production_turnover_files/figure-gfm/avg%20root%20diam%20with%20LAI-1.png)<!-- -->![](production_turnover_files/figure-gfm/avg%20root%20diam%20with%20LAI-2.png)<!-- -->
 
     ## Linear mixed model fit by REML ['lmerMod']
-    ## Formula: 
-    ## avg_diam_mm ~ max_temp + avg_vwc + avg_lai + clipped + clipped:manure +  
-    ##     (1 | block/Tube) + (1 | month_num)
+    ## Formula: avg_diam_mm ~ max_temp + avg_vwc + avg_lai + composition + (1 |  
+    ##     block/Tube) + (1 | month_num)
     ##    Data: tube_lai_model_data
     ## 
-    ## REML criterion at convergence: -507.1
+    ## REML criterion at convergence: -512.7
     ## 
     ## Scaled residuals: 
     ##     Min      1Q  Median      3Q     Max 
-    ## -2.9037 -0.4624  0.0372  0.4067  5.1872 
+    ## -3.1293 -0.3931  0.0217  0.3796  5.3435 
     ## 
     ## Random effects:
     ##  Groups     Name        Variance  Std.Dev.
-    ##  Tube:block (Intercept) 0.0002373 0.01540 
-    ##  block      (Intercept) 0.0007123 0.02669 
-    ##  month_num  (Intercept) 0.0009612 0.03100 
-    ##  Residual               0.0003902 0.01975 
+    ##  Tube:block (Intercept) 0.0003008 0.01734 
+    ##  block      (Intercept) 0.0004914 0.02217 
+    ##  month_num  (Intercept) 0.0009796 0.03130 
+    ##  Residual               0.0003926 0.01982 
     ## Number of obs: 124, groups:  Tube:block, 24; block, 8; month_num, 5
     ## 
     ## Fixed effects:
-    ##                       Estimate Std. Error t value
-    ## (Intercept)           0.524005   0.112730   4.648
-    ## max_temp             -0.008851   0.004196  -2.109
-    ## avg_vwc               0.001523   0.001165   1.307
-    ## avg_lai              -0.005716   0.003229  -1.770
-    ## clippedyes           -0.032842   0.014485  -2.267
-    ## clippedyes:manureyes  0.002696   0.008920   0.302
+    ##                    Estimate Std. Error t value
+    ## (Intercept)       4.798e-01  1.146e-01   4.186
+    ## max_temp         -9.086e-03  4.208e-03  -2.159
+    ## avg_vwc           1.562e-03  1.170e-03   1.335
+    ## avg_lai          -6.559e-05  1.991e-03  -0.033
+    ## compositionmixed  3.048e-02  1.776e-02   1.716
     ## 
     ## Correlation of Fixed Effects:
-    ##             (Intr) mx_tmp avg_vw avg_la clppdy
-    ## max_temp    -0.971                            
-    ## avg_vwc     -0.184  0.065                     
-    ## avg_lai     -0.143  0.004  0.042              
-    ## clippedyes  -0.055 -0.086  0.073  0.785       
-    ## clppdys:mnr  0.061 -0.041 -0.110 -0.067 -0.356
-    ## fit warnings:
-    ## fixed-effect model matrix is rank deficient so dropping 1 column / coefficient
+    ##             (Intr) mx_tmp avg_vw avg_la
+    ## max_temp    -0.980                     
+    ## avg_vwc     -0.177  0.066              
+    ## avg_lai     -0.163  0.132  0.013       
+    ## compostnmxd -0.181  0.113 -0.004 -0.080
 
 ![](production_turnover_files/figure-gfm/avg%20root%20diam%20with%20LAI-3.png)<!-- -->![](production_turnover_files/figure-gfm/avg%20root%20diam%20with%20LAI-4.png)<!-- -->![](production_turnover_files/figure-gfm/avg%20root%20diam%20with%20LAI-5.png)<!-- -->![](production_turnover_files/figure-gfm/avg%20root%20diam%20with%20LAI-6.png)<!-- -->
 
-Ugly quantiles diagnostic plots. Maybe that effect of clipping is real,
-I doubt the temperature effect because it hasn’t been a factor in any
-other models.
+Ugly quantiles diagnostic plots. No effect of LAI.
 
 ## Number of roots across size bins
 
