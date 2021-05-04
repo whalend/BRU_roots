@@ -689,8 +689,9 @@ The model pseudocode is:
 
 ` lmer(root metric ~ temperature metric + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data) `
 
-#### Root length 
-```{r depth avg root length}
+<!-- #### Average root length  --> 
+<!-- Scratch this -->
+```{r depth avg root length, eval=F}
 len_avg_d1 <- lmer(avg_length_mm ~ max_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
 len_avg_d2 <- lmer(avg_length_mm ~ min_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
 len_avg_d3 <- lmer(avg_length_mm ~ avg_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
@@ -714,9 +715,9 @@ sjPlot::plot_model(len_avg_d1a, show.values = T) +
   ggtitle("Avg length model fit to standardized variables")
 ```
 
-All interpretations with a grain of salt given the less than ideal model diagnostic plots.
+<!-- All interpretations with a grain of salt given the less than ideal model diagnostic plots. -->
 
-Some treatment effect from clipping and simulated grazing (clipping + manure) - clipping alone has shorter while simulated grazing has longer.
+<!-- Some treatment effect from clipping and simulated grazing (clipping + manure) - clipping alone has shorter while simulated grazing has longer. -->
 
 #### Summed root length
 ```{r depth summed root length, eval=TRUE}
@@ -800,6 +801,8 @@ sjPlot::plot_model(diam_avg_d1a, show.values = T) +
 ```
 
 Average root diameter is larger in the mixed versus the bahia only composition. The scale of these coefficient estimates is super tiny - 100ths of millimeters. 
+
+Peanut roots contributing to larger average diameter
 
 #### Average root diameter model with LAI
 ```{r depth avg root diameter with LAI}
@@ -885,13 +888,13 @@ re <- sjPlot::plot_model(avg_volume_lai_d3, type = "re")
 
 No effect of LAI.
 
-<!-- #### Summed root volume -->
-```{r depth summed root volume, eval=FALSE}
-## Total root volume at each depth ####
+#### Summed root volume
+```{r depth summed root volume, eval=TRUE}
 volume_tot_d1 <- lmer(tot_volume_mm3 ~ max_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
 volume_tot_d2 <- lmer(tot_volume_mm3 ~ min_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
 volume_tot_d3 <- lmer(tot_volume_mm3 ~ avg_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
-BIC(volume_tot_d1, volume_tot_d2, volume_tot_d3)
+AIC(volume_tot_d1, volume_tot_d2, volume_tot_d3) %>% 
+  arrange(AIC)
 plot(volume_tot_d3)
 DHARMa::simulateResiduals(volume_tot_d3) %>% plot()
 summary(volume_tot_d3)

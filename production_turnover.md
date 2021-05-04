@@ -337,62 +337,59 @@ The model pseudocode is:
 
 `lmer(root metric ~ temperature metric + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)`
 
-#### Root length
+<!-- #### Average root length  -->
+<!-- Scratch this -->
+<!-- All interpretations with a grain of salt given the less than ideal model diagnostic plots. -->
+<!-- Some treatment effect from clipping and simulated grazing (clipping + manure) - clipping alone has shorter while simulated grazing has longer. -->
+
+#### Summed root length
 
     ##            df      AIC
-    ## len_avg_d1 10 42847.78
-    ## len_avg_d3 10 42848.30
-    ## len_avg_d2 10 42848.79
+    ## len_tot_d1 10 70475.47
+    ## len_tot_d2 10 70475.13
+    ## len_tot_d3 10 70476.15
 
-![](production_turnover_files/figure-gfm/depth%20avg%20root%20length-1.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20length-2.png)<!-- -->
+![](production_turnover_files/figure-gfm/depth%20summed%20root%20length-1.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20summed%20root%20length-2.png)<!-- -->
 
     ## Linear mixed model fit by REML ['lmerMod']
-    ## Formula: avg_length_mm ~ max_temp + avg_vwc + clipped + clipped:manure +  
+    ## Formula: tot_length_mm ~ max_temp + avg_vwc + clipped + clipped:manure +  
     ##     composition + (1 | depth) + (1 | Tube) + (1 | month_num)
     ##    Data: depth_model_data
     ## 
-    ## REML criterion at convergence: 42827.8
+    ## REML criterion at convergence: 70455.5
     ## 
     ## Scaled residuals: 
     ##     Min      1Q  Median      3Q     Max 
-    ## -2.0533 -0.6239 -0.1907  0.4063  8.7353 
+    ## -3.8396 -0.6572 -0.1552  0.5157  6.3507 
     ## 
     ## Random effects:
     ##  Groups    Name        Variance Std.Dev.
-    ##  depth     (Intercept)  0.7353  0.8575  
-    ##  Tube      (Intercept)  0.6164  0.7851  
-    ##  month_num (Intercept)  0.3338  0.5777  
-    ##  Residual              17.4713  4.1799  
+    ##  depth     (Intercept)  22.59    4.753  
+    ##  Tube      (Intercept) 298.47   17.276  
+    ##  month_num (Intercept)  23.49    4.846  
+    ##  Residual              698.56   26.430  
     ## Number of obs: 7485, groups:  depth, 44; Tube, 24; month_num, 8
     ## 
     ## Fixed effects:
-    ##                       Estimate Std. Error t value
-    ## (Intercept)           5.272250   2.444548   2.157
-    ## max_temp              0.067016   0.091551   0.732
-    ## avg_vwc               0.020440   0.024769   0.825
-    ## clippedyes           -0.750869   0.412820  -1.819
-    ## compositionmixed      0.004467   0.339541   0.013
-    ## clippedyes:manureyes  0.794943   0.409788   1.940
+    ##                      Estimate Std. Error t value
+    ## (Intercept)           67.1939    18.6011   3.612
+    ## max_temp              -0.8994     0.6496  -1.384
+    ## avg_vwc                0.1160     0.1869   0.621
+    ## clippedyes            -6.6011     8.6770  -0.761
+    ## compositionmixed     -10.1480     7.0909  -1.431
+    ## clippedyes:manureyes   3.5530     8.6704   0.410
     ## 
     ## Correlation of Fixed Effects:
     ##             (Intr) mx_tmp avg_vw clppdy cmpstn
-    ## max_temp    -0.981                            
-    ## avg_vwc     -0.108  0.011                     
-    ## clippedyes   0.007 -0.096  0.029              
-    ## compostnmxd -0.226  0.163 -0.012 -0.016       
-    ## clppdys:mnr  0.003  0.001 -0.037 -0.497  0.002
+    ## max_temp    -0.914                            
+    ## avg_vwc     -0.102  0.006                     
+    ## clippedyes  -0.205 -0.032  0.010              
+    ## compostnmxd -0.240  0.055 -0.005 -0.002       
+    ## clppdys:mnr  0.001  0.000 -0.013 -0.500  0.000
     ## fit warnings:
     ## fixed-effect model matrix is rank deficient so dropping 1 column / coefficient
 
-![](production_turnover_files/figure-gfm/depth%20avg%20root%20length-3.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20length-4.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20length-5.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20length-6.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20length-7.png)<!-- -->
-
-All interpretations with a grain of salt given the less than ideal model
-diagnostic plots.
-
-Some treatment effect from clipping and simulated grazing (clipping +
-manure) - clipping alone has shorter while simulated grazing has longer.
-
-#### Summed root length
+![](production_turnover_files/figure-gfm/depth%20summed%20root%20length-3.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20summed%20root%20length-4.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20summed%20root%20length-5.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20summed%20root%20length-6.png)<!-- -->
 
 #### Average root length model with LAI
 
@@ -533,6 +530,8 @@ Average root diameter is larger in the mixed versus the bahia only
 composition. The scale of these coefficient estimates is super tiny -
 100ths of millimeters.
 
+Peanut roots contributing to larger average diameter
+
 #### Average root diameter model with LAI
 
     ## Linear mixed model fit by REML ['lmerMod']
@@ -670,7 +669,114 @@ the positive side.
 
 No effect of LAI.
 
-<!-- #### Summed root volume -->
+#### Summed root volume
+
+    ##               df      AIC
+    ## volume_tot_d3 10 41587.34
+    ## volume_tot_d2 10 41588.31
+    ## volume_tot_d1 10 41588.80
+
+![](production_turnover_files/figure-gfm/depth%20summed%20root%20volume-1.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20summed%20root%20volume-2.png)<!-- -->
+
+    ## Linear mixed model fit by REML ['lmerMod']
+    ## Formula: tot_volume_mm3 ~ avg_temp + avg_vwc + clipped + clipped:manure +  
+    ##     composition + (1 | depth) + (1 | Tube) + (1 | month_num)
+    ##    Data: depth_model_data
+    ## 
+    ## REML criterion at convergence: 41567.3
+    ## 
+    ## Scaled residuals: 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -2.3808 -0.5926 -0.2575  0.3391  9.1964 
+    ## 
+    ## Random effects:
+    ##  Groups    Name        Variance Std.Dev.
+    ##  depth     (Intercept)  0.46372 0.6810  
+    ##  Tube      (Intercept)  2.11558 1.4545  
+    ##  month_num (Intercept)  0.03463 0.1861  
+    ##  Residual              14.74849 3.8404  
+    ## Number of obs: 7485, groups:  depth, 44; Tube, 24; month_num, 8
+    ## 
+    ## Fixed effects:
+    ##                       Estimate Std. Error t value
+    ## (Intercept)           2.284113   1.094178   2.088
+    ## avg_temp              0.081501   0.036360   2.241
+    ## avg_vwc               0.005945   0.011075   0.537
+    ## clippedyes           -1.265276   0.735797  -1.720
+    ## compositionmixed     -0.108779   0.600821  -0.181
+    ## clippedyes:manureyes  0.652461   0.735137   0.888
+    ## 
+    ## Correlation of Fixed Effects:
+    ##             (Intr) avg_tm avg_vw clppdy cmpstn
+    ## avg_temp    -0.822                            
+    ## avg_vwc     -0.071 -0.032                     
+    ## clippedyes  -0.325 -0.015  0.009              
+    ## compostnmxd -0.301  0.032 -0.005 -0.001       
+    ## clppdys:mnr  0.002 -0.001 -0.010 -0.500  0.000
+    ## fit warnings:
+    ## fixed-effect model matrix is rank deficient so dropping 1 column / coefficient
+
+![](production_turnover_files/figure-gfm/depth%20summed%20root%20volume-3.png)<!-- -->
+
+    ## [[1]]
+
+![](production_turnover_files/figure-gfm/depth%20summed%20root%20volume-4.png)<!-- -->
+
+    ## 
+    ## [[2]]
+
+![](production_turnover_files/figure-gfm/depth%20summed%20root%20volume-5.png)<!-- -->
+
+    ## 
+    ## [[3]]
+
+![](production_turnover_files/figure-gfm/depth%20summed%20root%20volume-6.png)<!-- -->
+![](production_turnover_files/figure-gfm/depth%20summed%20root%20volume-7.png)<!-- -->
+
+    ## Linear mixed model fit by REML ['lmerMod']
+    ## Formula: tot_volume_mm3 ~ std2_max_temp + std2_avg_vwc + std2_avg_lai +  
+    ##     std2_avg_lai:clipped + clipped + clipped:manure + composition +  
+    ##     (1 | depth) + (1 | Tube) + (1 | month_num)
+    ##    Data: depth_lai_model_data
+    ## 
+    ## REML criterion at convergence: 26000.9
+    ## 
+    ## Scaled residuals: 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -2.7672 -0.5912 -0.2484  0.3372  9.7096 
+    ## 
+    ## Random effects:
+    ##  Groups    Name        Variance Std.Dev.
+    ##  depth     (Intercept)  0.3959  0.6292  
+    ##  Tube      (Intercept)  2.3652  1.5379  
+    ##  month_num (Intercept)  3.4825  1.8662  
+    ##  Residual              13.7002  3.7014  
+    ## Number of obs: 4738, groups:  depth, 44; Tube, 24; month_num, 5
+    ## 
+    ## Fixed effects:
+    ##                         Estimate Std. Error t value
+    ## (Intercept)               4.6698     1.1297   4.134
+    ## std2_max_temp            -2.0876     0.4788  -4.360
+    ## std2_avg_vwc              1.0172     0.6555   1.552
+    ## std2_avg_lai             -0.9024     0.7019  -1.286
+    ## clippedyes               -2.0508     0.9059  -2.264
+    ## compositionmixed         -0.3804     0.6558  -0.580
+    ## std2_avg_lai:clippedyes  -0.5195     1.0476  -0.496
+    ## clippedyes:manureyes      0.7298     0.7814   0.934
+    ## 
+    ## Correlation of Fixed Effects:
+    ##             (Intr) std2_m_ std2_vg_v std2_vg_l clppdy cmpstn st2__:
+    ## std2_mx_tmp  0.028                                                 
+    ## std2_vg_vwc -0.086  0.046                                          
+    ## std2_avg_la -0.353 -0.075   0.076                                  
+    ## clippedyes  -0.460 -0.068   0.075     0.459                        
+    ## compostnmxd -0.202  0.133  -0.023    -0.201    -0.105              
+    ## std2_vg_l:c  0.291  0.101  -0.011    -0.809    -0.248  0.144       
+    ## clppdys:mnr  0.000 -0.018  -0.049     0.006    -0.436 -0.001 -0.029
+    ## fit warnings:
+    ## fixed-effect model matrix is rank deficient so dropping 1 column / coefficient
+
+![](production_turnover_files/figure-gfm/depth%20summed%20root%20volume-8.png)<!-- -->
 
 ### Models for roots aggregated to tubes
 
