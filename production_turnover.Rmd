@@ -528,10 +528,10 @@ depth_data <- df %>%
   group_by(plot_id, Tube, block, Location, root_status, month_num, Date) %>% 
   summarise(tot_length_mm = sum(Length_mm),
             avg_length_mm = mean(Length_mm),
-            tot_volume_mm3 = sum(TotVolume_mm3),
-            avg_volume_mm3 = mean(TotVolume_mm3),
-            tot_diam_mm = sum(TotAvgDiam_mm),
-            avg_diam_mm = mean(TotAvgDiam_mm)) %>% 
+            tot_volume_mm3 = sum(Volume_mm3),
+            avg_volume_mm3 = mean(Volume_mm3),
+            tot_diam_mm = sum(AvgDiam_mm),
+            avg_diam_mm = mean(AvgDiam_mm)) %>% 
   ungroup(.)
 depth_data <- left_join(depth_data, mr_plot_data)
 
@@ -540,10 +540,10 @@ tube_data <- df %>%
   group_by(plot_id, Tube, block, root_status, month_num, Date) %>% 
   summarise(tot_length_mm = sum(Length_mm),
             avg_length_mm = mean(Length_mm),
-            tot_volume_mm3 = sum(TotVolume_mm3),
-            avg_volume_mm3 = mean(TotVolume_mm3),
-            tot_diam_mm = sum(TotAvgDiam_mm),
-            avg_diam_mm = mean(TotAvgDiam_mm)) %>% 
+            tot_volume_mm3 = sum(Volume_mm3),
+            avg_volume_mm3 = mean(Volume_mm3),
+            tot_diam_mm = sum(AvgDiam_mm),
+            avg_diam_mm = mean(AvgDiam_mm)) %>% 
   ungroup(.)
 tube_data <- left_join(tube_data, mr_plot_data)
 
