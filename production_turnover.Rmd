@@ -676,6 +676,8 @@ depth_model_data <- depth_data %>%
          std2_avg_vwc = effectsize::standardize(avg_vwc, two_sd = TRUE),
          std2_avg_lai = effectsize::standardize(avg_lai, two_sd = TRUE))
 
+write_csv(depth_model_data, "data/depth_model_data.csv")
+
 ## Subset of data because LAI measurements don't begin until July
 depth_lai_model_data <- depth_model_data %>% 
   filter(!is.na(avg_lai))
@@ -897,19 +899,25 @@ AIC(volume_tot_d1, volume_tot_d2, volume_tot_d3) %>%
   arrange(AIC)
 plot(volume_tot_d3)
 DHARMa::simulateResiduals(volume_tot_d3) %>% plot()
+
 summary(volume_tot_d3)
 sjPlot::plot_model(volume_tot_d3, type = "est", show.values = T)
 sjPlot::plot_model(volume_tot_d3, type = "re")
 
-volume_tot_d3a <- lmer(tot_volume_mm3 ~ std2_avg_temp + std2_avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
-sjPlot::plot_model(volume_tot_d3a, type = "est", show.values = T)
+# volume_tot_d3a <- lmer(tot_volume_mm3 ~ std2_avg_temp + std2_avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
+# sjPlot::plot_model(volume_tot_d3a, type = "est", show.values = T)
 # arm::standardize(volume_tot_d1a) %>% sjPlot::plot_model(., show.values = T)
 
-volume_tot_lai_d3 <- lmer(tot_volume_mm3 ~ std2_max_temp + std2_avg_vwc + std2_avg_lai + std2_avg_lai:clipped + clipped + clipped:manure + composition  + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_lai_model_data)
+volume_tot_lai_d3 <- lmer(tot_volume_mm3 ~ avg_temp + avg_vwc + avg_lai + composition  + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_lai_model_data)
 summary(volume_tot_lai_d3)
 sjPlot::plot_model(volume_tot_lai_d3, show.values = T)
 # sjPlot::plot_model(volume_tot_lai_d3, type = "re")
+
+ggplot(depth_lai_model_data, aes(avg_lai, tot_volume_mm3)) +
+  geom_point(aes(color = clipped, shape = composition), position = "jitter")
 ```
+
+Next step: Total root volume/length to nearest LAI acquisition date - and potential lag between LAI measurement to root production, or vice versa.
 
 
 ### Models for roots aggregated to tubes
@@ -1027,7 +1035,7 @@ re[[3]] + ggtitle("Random effects: month")
 
 #### Average root volume
 ```{r tube avg volume}
-vol_avg_m1 <- lmer(avg_volume_mm3 ~ max_temp + avg_vwc + clipped + clipped:manure + (1|block/Tube) + (1|month_num), data = tube_model_data)
+vol_avg_m1 <- lmer(avg_volume_mm3 ~ max_temp + avg_vwc + clipped + clipped:manure + composition + (1|block/Tube) + (1|month_num), data = tube_model_data)
 vol_avg_m2 <- lmer(avg_volume_mm3 ~ min_temp + avg_vwc + clipped + clipped:manure + composition + (1|block/Tube) + (1|month_num), data = tube_model_data)
 vol_avg_m3 <- lmer(avg_volume_mm3 ~ avg_temp + avg_vwc + clipped + clipped:manure + composition + (1|block/Tube) + (1|month_num), data = tube_model_data)
 AIC(vol_avg_m1, vol_avg_m2, vol_avg_m3) %>% 
@@ -1065,17 +1073,26 @@ re <- sjPlot::plot_model(vol_avg_lai_m1, type = "re", grid = T)
 
 No effect of LAI.
 
-```{r tube summed volume, eval=FALSE}
+#### Summed root volume
+```{r tube summed volume, eval=TRUE}
 vol_tot_m1 <- lmer(tot_volume_mm3 ~ max_temp + avg_vwc + clipped + clipped:manure + (1|block/Tube) + (1|month_num), data = tube_model_data)
 vol_tot_m2 <- lmer(tot_volume_mm3 ~ min_temp + avg_vwc + clipped + clipped:manure + composition + (1|block/Tube) + (1|month_num), data = tube_model_data)
 vol_tot_m3 <- lmer(tot_volume_mm3 ~ avg_temp + avg_vwc + clipped + clipped:manure + composition + (1|block/Tube) + (1|month_num), data = tube_model_data)
-AIC(vol_tot_m1, vol_tot_m2, vol_tot_m3)# avg temp ever so slightly < min temp
+AIC(vol_tot_m1, vol_tot_m2, vol_tot_m3) %>% 
+  arrange(AIC)# avg temp ever so slightly < min temp
 summary(vol_tot_m3)
 plot(vol_tot_m3)
 DHARMa::simulateResiduals(vol_tot_m3) %>% plot()
 sjPlot::plot_model(vol_tot_m3, type = "est", show.values = T)
 sjPlot::tab_model(vol_tot_m3)
 ```
+
+```{r}
+library(patchwork)
+sjPlot::plot_model(vol_avg_m1, type = "est", show.values = T)|
+  sjPlot::plot_model(vol_tot_m3, type = "est", show.values = T)
+```
+
 
 #### Average root diameter
 ```{r tube avg diameter}
@@ -1135,6 +1152,24 @@ sjPlot::plot_model(dia_tot_m3, type = "std2", show.values = T)
 sjPlot::tab_model(dia_tot_m3)
 ```
 
+
+Present both analyses (average and summed forms)
+1. root size characteristics
+2. how much root is there
+3. individual roots?
+
+Avg diameter
+Avg vs. total volume comparison
+
+Check individual date acquisitions of LAI
+Use plot biomass clipping data instead of LAI
+ - use pmass (lower of two variables)
+ 
+glmer(family = Gamma) for biomass
+
+Why no treatment effect on gross gain & gross loss compared to total/average?
+
+Check for differences at first date - if it's already different in April then the treatment may just be maintaining
 
 
 ## Number of roots across size bins
