@@ -548,7 +548,10 @@ tube_data <- df %>%
 tube_data <- left_join(tube_data, mr_plot_data)
 
 ## Individual roots data.
-roots_data <- left_join(df, mr_plot_data)
+roots_data <- left_join(df %>% select(-starts_with("Tot"), -TipDiam:-Altitude), 
+                        mr_plot_data)
+
+write_csv(roots_data, "data/roots_treatment_data.csv")
 ```
 
 ## Root measurements aggregated to measurement depth ("Location")
