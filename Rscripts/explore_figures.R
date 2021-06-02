@@ -50,3 +50,14 @@ ggplot(df, aes(Location*-1, Length_mm) +
   coord_flip() +
   facet_grid(~root_status) +
   xlab("Relative depth")
+
+  # AliveLength	AliveProjArea	AliveSurfArea	AliveAvgDiam(mm/10)	AliveVolume
+  # 8.0484	    2.9166	      9.1629	       3.6239	       0.842
+  # 8.0484	    2.9166	      9.1629	       3.6239	       0.842
+  
+v <- .842
+l <- 8.05
+d <- 3.62
+r <- d/2
+
+l*((r/10)^2*pi)

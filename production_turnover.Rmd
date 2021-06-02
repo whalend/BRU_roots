@@ -425,6 +425,7 @@ with(df1, cor(calc_net, TotLength_mm, use = "complete.obs"))
 # Modeling
 
 
+
 ## Gross change
 ```{r model gross change}
 library(lme4)
@@ -523,6 +524,12 @@ mr_plot_data <- mr_plot_data %>%
   mutate(clipped = as.factor(ifelse(treatment!="control", "yes", "no")),
          manure = as.factor(ifelse(treatment=="cut+manure", "yes", "no")))
 
+lai_root <- read_csv("data/processed_data/lai_near_root_sampling.csv")
+lai_root <- lai_root %>% 
+  select(block = Block, plot_id, LAI, root_month)
+
+
+
 ## Calculate the sum and average at each depth window - 1st step up from roots
 depth_data <- df %>% 
   group_by(plot_id, Tube, block, Location, root_status, month_num, Date) %>% 
@@ -534,6 +541,7 @@ depth_data <- df %>%
             avg_diam_mm = mean(AvgDiam_mm)) %>% 
   ungroup(.)
 depth_data <- left_join(depth_data, mr_plot_data)
+depth_data <- left_join(depth_data, lai_root, by = c("plot_id", "block", "month_num" = "root_month"))
 
 ## Calculate the sum and average at each tube - 2nd stup up from roots
 tube_data <- df %>% 
@@ -546,13 +554,20 @@ tube_data <- df %>%
             avg_diam_mm = mean(AvgDiam_mm)) %>% 
   ungroup(.)
 tube_data <- left_join(tube_data, mr_plot_data)
+tube_data <- left_join(tube_data, lai_root, by = c("plot_id", "block", "month_num" = "root_month"))
 
 ## Individual roots data.
 roots_data <- left_join(df %>% select(-starts_with("Tot"), -TipDiam:-Altitude), 
                         mr_plot_data)
+roots_data <- left_join(roots_data, lai_root, by = c("plot_id", "block", "month_num" = "root_month"))
 
 write_csv(roots_data, "data/roots_treatment_data.csv")
 ```
+
+
+## Differences at first sample date
+
+
 
 ## Root measurements aggregated to measurement depth ("Location")
 The sum of each metric was calculated at each combination of Tube, Location (depth), Month & Date (equivalent but keeping Date handy), and root_status.
@@ -672,7 +687,7 @@ library(lme4)
 depth_model_data <- depth_data %>% 
   filter(root_status == "Alive") %>% 
   select(Tube, depth = Location, tot_length_mm:avg_diam_mm, composition,
-         clipped, manure, month_num, avg_vwc:avg_sem, block, plot_id, treatment) %>% 
+         clipped, manure, month_num, avg_vwc:avg_sem, LAI, block, plot_id, treatment) %>% 
   mutate(std2_max_temp = effectsize::standardize(max_temp, two_sd = TRUE),
          std2_min_temp = effectsize::standardize(min_temp, two_sd = TRUE),
          std2_avg_temp = effectsize::standardize(avg_temp, two_sd = TRUE),
@@ -683,7 +698,7 @@ write_csv(depth_model_data, "data/depth_model_data.csv")
 
 ## Subset of data because LAI measurements don't begin until July
 depth_lai_model_data <- depth_model_data %>% 
-  filter(!is.na(avg_lai))
+  filter(!is.na(LAI))
 ```
 
 I calculate maximum temperature, minimum temperature, and average temperature for each month, so these metrics only roughly correspond to the time around when the root images were taken. Ideally these temperature values would be for the temperatures recorded between the t and t-1 measurements (I'm being a little lazy on the first pass).
@@ -726,9 +741,9 @@ sjPlot::plot_model(len_avg_d1a, show.values = T) +
 
 #### Summed root length
 ```{r depth summed root length, eval=TRUE}
-len_tot_d1 <- lmer(tot_length_mm ~ max_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
-len_tot_d2 <- lmer(tot_length_mm ~ min_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
-len_tot_d3 <- lmer(tot_length_mm ~ avg_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
+len_tot_d1 <- lmer(tot_length_mm ~ max_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_model_data)
+len_tot_d2 <- lmer(tot_length_mm ~ min_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_model_data)
+len_tot_d3 <- lmer(tot_length_mm ~ avg_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_model_data)
 AIC(len_tot_d1, len_tot_d2, len_tot_d3) %>% 
   arrange()
 
@@ -745,12 +760,8 @@ re[[3]] + ggtitle("Random effects: month ")
 ```
 
 
-#### Average root length model with LAI
-Subset of data with no NA values for LAI.
-
-Is LAI confounded with the "clipped" treatment?
-
-```{r depth avg root length LAI}
+<!-- #### Average root length model with LAI -->
+```{r depth avg root length LAI, eval=F}
 ## add LAI into model - subset of data with no NA values for LAI
 avg_len_lai_d1 <- lmer(avg_length_mm ~ max_temp + avg_vwc + avg_lai + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_lai_model_data)
 summary(avg_len_lai_d1)
@@ -760,71 +771,93 @@ re <- sjPlot::plot_model(avg_len_lai_d1, type = "re")
 (re[[1]] + ggtitle("Random effects: depth")) 
 (re[[2]] + ggtitle("Random effects: tube")) 
 (re[[3]] + ggtitle("Random effects: month"))
+
+## depth avg root length nearest lai
+avg_len_lai_d1a <- lmer(avg_length_mm ~ max_temp + avg_vwc + LAI + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_lai_model_data)
+summary(avg_len_lai_d1a)
+sjPlot::plot_models(avg_len_lai_d1, avg_len_lai_d1a, show.values = TRUE)
 ```
 
-No effect of LAI.
+
 
 #### Summed root length model with LAI
-```{r depth summed root length LAI}
-len_tot_lai_d1 <- lmer(tot_length_mm ~ max_temp + avg_vwc + avg_lai + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
+Subset of data with no NA values for LAI.
 
+Is LAI confounded with the "clipped" treatment? yes. Exclude treatment from models with LAI
+
+```{r depth summed root length LAI}
+len_tot_lai_d1 <- lmer(tot_length_mm ~ max_temp + avg_vwc + avg_lai + composition + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_model_data)
 summary(len_tot_lai_d1)
-sjPlot::plot_model(len_tot_lai_d1, show.values = T)
+
+sjPlot::plot_model(len_tot_lai_d1, show.values = TRUE)
 re <- sjPlot::plot_model(len_tot_lai_d1, type = "re")
 (re[[1]] + ggtitle("Random effects: depth")) 
 (re[[2]] + ggtitle("Random effects: tube")) 
-(re[[3]] + ggtitle("Random effects: month"))
+(re[[3]] + ggtitle("Random effects: block"))
+(re[[4]] + ggtitle("Random effects: month"))
+
+len_tot_lai_d1a <- lmer(tot_length_mm ~ max_temp + avg_vwc + LAI + composition + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_model_data)
+summary(len_tot_lai_d1a)
+sjPlot::plot_model(len_tot_lai_d1a, show.values = T) +
+  ggtitle("Tot length, nearest LAI value")
 ```
 
-Pretty strong negative relationship with LAI and maximum temperature.
+Pretty strong negative relationship with average LAI and maximum temperature but not with nearest LAI value.
 
 #### Average root diameter
 ```{r depth avg root diameter}
 ## Average root diameter at each depth ####
-diam_avg_d1 <- lmer(avg_diam_mm ~ max_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
-diam_avg_d2 <- lmer(avg_diam_mm ~ min_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
-diam_avg_d3 <- lmer(avg_diam_mm ~ avg_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
+diam_avg_d1 <- lmer(avg_diam_mm ~ max_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_model_data)
+diam_avg_d2 <- lmer(avg_diam_mm ~ min_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_model_data)
+diam_avg_d3 <- lmer(avg_diam_mm ~ avg_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_model_data)
 AIC(diam_avg_d1, diam_avg_d2, diam_avg_d3) %>% 
   arrange(AIC)# kinda all the same
 
-plot(diam_avg_d1)
-DHARMa::simulateResiduals(diam_avg_d1) %>% plot()
+plot(diam_avg_d2)
+DHARMa::simulateResiduals(diam_avg_d2) %>% plot()
 
-summary(diam_avg_d1)
-sjPlot::plot_model(diam_avg_d1, show.values = T) +
+summary(diam_avg_d2)
+sjPlot::plot_model(diam_avg_d2, show.values = T) +
   scale_y_continuous(c(-.1,.1))
-re <- sjPlot::plot_model(diam_avg_d1, type = "re")
-re[[1]] + ggtitle("Random effects: depth")
-re[[2]] + ggtitle("Random effects: tube")
-re[[3]] + ggtitle("Random effects: month")
-# Order of plots: depth, tube, month
+re <- sjPlot::plot_model(diam_avg_d2, type = "re")
+re[[1]] + ggtitle("Random effects, depth") + scale_y_continuous(c(-.1,.1))
+re[[2]] + ggtitle("Random effects, tube:block") + scale_y_continuous(c(-.1,.1))
+re[[3]] + ggtitle("Random effects, block") + scale_y_continuous(c(-.1,.1))
+re[[4]] + ggtitle("Random effects, month")+ scale_y_continuous(c(-.1,.1))
 
-diam_avg_d1a <- lmer(avg_diam_mm ~ std2_max_temp + std2_avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
-sjPlot::plot_model(diam_avg_d1a, show.values = T) +
+
+diam_avg_d2a <- lmer(avg_diam_mm ~ std2_min_temp + std2_avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_model_data)
+sjPlot::plot_model(diam_avg_d2a, show.values = T) +
   scale_y_continuous(limits = c(-.1, .1)) +
   ggtitle("Avg diameter model with standardized variables")
 ```
 
-Average root diameter is larger in the mixed versus the bahia only composition. The scale of these coefficient estimates is super tiny - 100ths of millimeters. 
+Average root diameter is greater in the mixed versus the bahia-only composition, indicating that peanut roots have larger diameters. The scale of these coefficient estimates is super tiny - 100ths of millimeters...maybe...could be units issue. But as long as any units issue is simply scalar the relationships should be the same.
 
-Peanut roots contributing to larger average diameter
 
 #### Average root diameter model with LAI
 ```{r depth avg root diameter with LAI}
 ## add LAI into model - subset of data with no NA values for LAI
-avg_diam_lai_d1 <- lmer(avg_diam_mm ~ max_temp + avg_vwc + avg_lai + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_lai_model_data)
-summary(avg_diam_lai_d1)
-sjPlot::plot_model(avg_diam_lai_d1, show.values = T) +
+avg_diam_lai_d2 <- lmer(avg_diam_mm ~ min_temp + avg_vwc + avg_lai + composition + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_lai_model_data)
+summary(avg_diam_lai_d2)
+sjPlot::plot_model(avg_diam_lai_d2, show.values = T) +
   scale_y_continuous(limits = c(-.1,.1))
 
-re <- sjPlot::plot_model(avg_diam_lai_d1, type = "re")
-(re[[1]] + ggtitle("Random effects: depth")) 
-(re[[2]] + ggtitle("Random effects: tube")) 
-(re[[3]] + ggtitle("Random effects: month"))
-# sjPlot::plot_model(avg_diam_lai_d3, type = "re")
+re <- sjPlot::plot_model(avg_diam_lai_d2, type = "re")
+(re[[1]] + ggtitle("Random effects: depth")) + scale_y_continuous(limits = c(-.1,.1))
+(re[[2]] + ggtitle("Random effects: tube")) + scale_y_continuous(limits = c(-.1,.1))
+(re[[3]] + ggtitle("Random effects: block")) + scale_y_continuous(limits = c(-.1,.1))
+(re[[4]] + ggtitle("Random effects: month")) + scale_y_continuous(limits = c(-.1,.1))
+
+
+avg_diam_lai_d2a <- lmer(avg_diam_mm ~ min_temp + avg_vwc + LAI + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_lai_model_data)
+summary(avg_diam_lai_d2a)
+sjPlot::plot_model(avg_diam_lai_d2a, show.values = T) +
+  scale_y_continuous(limits = c(-.1,.1)) +
+  ggtitle("Avg diam, nearest LAI value")
 ```
 
-A sort of negative relationship with LAI. 
+A negative but very small value relationship with avg LAI; no relationship with nearest LAI measurement. 
 
 <!-- #### Summed root diameter -->
 ```{r depth summed root diameter, eval=FALSE}
@@ -852,9 +885,9 @@ sjPlot::plot_model(diam_tot_lai_d3, show.values = T)
 #### Average root volume
 ```{r depth avg root volume}
 ## Average root volume at each depth ####
-volume_avg_d1 <- lmer(avg_volume_mm3 ~ max_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
-volume_avg_d2 <- lmer(avg_volume_mm3 ~ min_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
-volume_avg_d3 <- lmer(avg_volume_mm3 ~ avg_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
+volume_avg_d1 <- lmer(avg_volume_mm3 ~ max_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_model_data)
+volume_avg_d2 <- lmer(avg_volume_mm3 ~ min_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_model_data)
+volume_avg_d3 <- lmer(avg_volume_mm3 ~ avg_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_model_data)
 AIC(volume_avg_d1, volume_avg_d2, volume_avg_d3) %>% 
   arrange(AIC)# all the same
 
@@ -866,9 +899,11 @@ sjPlot::plot_model(volume_avg_d3, show.values = T)
 re <- sjPlot::plot_model(volume_avg_d3, type = "re")
 (re[[1]] + ggtitle("Random effects: depth")) 
 (re[[2]] + ggtitle("Random effects: tube")) 
+(re[[3]] + ggtitle("Random effects: block"))
 (re[[3]] + ggtitle("Random effects: month"))
 
-volume_avg_d3a <- lmer(avg_volume_mm3 ~ std2_avg_temp + std2_avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
+volume_avg_d3a <- lmer(avg_volume_mm3 ~ std2_avg_temp + std2_avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_model_data)
+summary(volume_avg_d3a)
 sjPlot::plot_model(volume_avg_d3a, show.values = T) +
   ggtitle("Avg volume model with standardized variables")
 ```
@@ -878,7 +913,7 @@ Lower average volume in clipped but higher average volume in mixed composition. 
 #### Average root volume model with LAI
 ```{r depth avg root volume with LAI}
 ## add LAI into model - subset of data with no NA values for LAI
-avg_volume_lai_d3 <- lmer(avg_volume_mm3 ~ avg_temp + avg_vwc + avg_lai + composition +  (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_lai_model_data)
+avg_volume_lai_d3 <- lmer(avg_volume_mm3 ~ avg_temp + avg_vwc + avg_lai + composition +  (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_lai_model_data)
 plot(avg_volume_lai_d3)
 
 summary(avg_volume_lai_d3)
@@ -886,18 +921,24 @@ sjPlot::plot_model(avg_volume_lai_d3, show.values = T)
 re <- sjPlot::plot_model(avg_volume_lai_d3, type = "re")
 (re[[1]] + ggtitle("Random effects: depth")) 
 (re[[2]] + ggtitle("Random effects: tube")) 
-(re[[3]] + ggtitle("Random effects: month"))
+(re[[3]] + ggtitle("Random effects: block"))
+(re[[4]] + ggtitle("Random effects: month"))
 
-## Need to think on handling & interpretation of LAI in clipped plots.
+## Need to think on handling & interpretation of LAI in clipped plots: confounded so remove treatment.
+
+avg_volume_lai_d3a <- lmer(avg_volume_mm3 ~ avg_temp + avg_vwc + LAI + composition +  (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_lai_model_data)
+summary(avg_volume_lai_d3a)
+sjPlot::plot_model(avg_volume_lai_d3a, show.values = T) +
+  ggtitle("Avg volume, nearest LAI value")
 ```
 
-No effect of LAI.
+No effect of average or nearest LAI.
 
 #### Summed root volume
 ```{r depth summed root volume, eval=TRUE}
-volume_tot_d1 <- lmer(tot_volume_mm3 ~ max_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
-volume_tot_d2 <- lmer(tot_volume_mm3 ~ min_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
-volume_tot_d3 <- lmer(tot_volume_mm3 ~ avg_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_model_data)
+volume_tot_d1 <- lmer(tot_volume_mm3 ~ max_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_model_data)
+volume_tot_d2 <- lmer(tot_volume_mm3 ~ min_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_model_data)
+volume_tot_d3 <- lmer(tot_volume_mm3 ~ avg_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_model_data)
 AIC(volume_tot_d1, volume_tot_d2, volume_tot_d3) %>% 
   arrange(AIC)
 plot(volume_tot_d3)
@@ -911,16 +952,25 @@ sjPlot::plot_model(volume_tot_d3, type = "re")
 # sjPlot::plot_model(volume_tot_d3a, type = "est", show.values = T)
 # arm::standardize(volume_tot_d1a) %>% sjPlot::plot_model(., show.values = T)
 
-volume_tot_lai_d3 <- lmer(tot_volume_mm3 ~ avg_temp + avg_vwc + avg_lai + composition  + (1 | depth) + (1 | Tube) + (1 | month_num), data = depth_lai_model_data)
+volume_tot_lai_d3 <- lmer(tot_volume_mm3 ~ avg_temp + avg_vwc + avg_lai + composition  + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_lai_model_data)
 summary(volume_tot_lai_d3)
 sjPlot::plot_model(volume_tot_lai_d3, show.values = T)
 # sjPlot::plot_model(volume_tot_lai_d3, type = "re")
 
-ggplot(depth_lai_model_data, aes(avg_lai, tot_volume_mm3)) +
-  geom_point(aes(color = clipped, shape = composition), position = "jitter")
+ggplot(depth_lai_model_data, aes(clipped, avg_lai)) +
+  geom_boxplot() +
+  geom_point(aes(color = clipped, shape = composition), position = "jitter") 
+
+volume_tot_lai_d3a <- lmer(tot_volume_mm3 ~ avg_temp + avg_vwc + LAI + composition  + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_lai_model_data)
+summary(volume_tot_lai_d3a)
+sjPlot::plot_model(volume_tot_lai_d3a, show.values = T) +
+  ggtitle("Total vol, nearest LAI value")
 ```
 
-Next step: Total root volume/length to nearest LAI acquisition date - and potential lag between LAI measurement to root production, or vice versa.
+Negative relationship between average LAI and total root volume; no relationship with nearest LAI value.
+
+<!-- Next step: Total root volume/length to nearest LAI acquisition date -  -->
+Potential lag between LAI measurement to root production, or vice versa.
 
 
 ### Models for roots aggregated to tubes
@@ -934,7 +984,7 @@ library(lme4)
 tube_model_data <- tube_data %>% 
   filter(root_status == "Alive") %>% 
   select(Tube, tot_length_mm:avg_diam_mm, composition, clipped, manure,
-         month_num, avg_vwc:avg_sem, block, plot_id, treatment) %>% 
+         month_num, avg_vwc:avg_sem, LAI, block, plot_id, treatment) %>% 
   mutate(std2_avg_temp = effectsize::standardize(avg_temp, two_sd = TRUE),
          std2_min_temp = effectsize::standardize(min_temp, two_sd = TRUE),
          std2_max_temp = effectsize::standardize(max_temp, two_sd = TRUE),
@@ -942,7 +992,7 @@ tube_model_data <- tube_data %>%
          )
 
 tube_lai_model_data <- tube_model_data %>% 
-  filter(!is.na(avg_lai)) %>% 
+  filter(!is.na(LAI)) %>% 
   mutate(std2_avg_temp = effectsize::standardize(avg_temp, two_sd = TRUE),
          std2_min_temp = effectsize::standardize(min_temp, two_sd = TRUE),
          std2_max_temp = effectsize::standardize(max_temp, two_sd = TRUE),

@@ -123,6 +123,25 @@ lai_data <- lai_data %>%
          )
 summary(lai_data)
 
+## LAI data from dates nearest to root sampling dates
+### need root data to get sampling dates
+df <- read_csv("data/processed_data/mr_roots_data_corrected.csv")
+unique(df$Date)
+unique(lai_data$Date)
+d <- c("7/3/20","7/30/20","8/28/20","10/2/20","10/16/20","11/13/20")
+lai_data_sub <- lai_data %>% 
+  filter(date %in% d) %>% 
+  mutate(root_month = case_when(
+    date == "7/3/20"  ~ 6,
+    date == "7/30/20" ~ 7,
+    date == "8/28/20" ~ 8,
+    date == "10/2/20" ~ 9,
+    date == "10/16/20" ~ 10,
+    date == "11/13/20" ~ 11
+  ))
+write_csv(lai_data_sub, "data/processed_data/lai_near_root_sampling.csv")
+
+
 lai_data_month <- lai_data %>% 
   group_by(plot_id, month_num) %>% 
   summarise(avg_lai = mean(LAI, na.rm = T),
