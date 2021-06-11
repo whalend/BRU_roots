@@ -522,7 +522,8 @@ Random effects (intercepts)
 ```{r data grouping}
 mr_plot_data <- mr_plot_data %>% 
   mutate(clipped = as.factor(ifelse(treatment!="control", "yes", "no")),
-         manure = as.factor(ifelse(treatment=="cut+manure", "yes", "no")))
+         manure = as.factor(ifelse(treatment=="cut+manure", "yes", "no")),
+         total_wt_g = live_wt_g + dead_wt_g)
 
 lai_root <- read_csv("data/processed_data/lai_near_root_sampling.csv")
 lai_root <- lai_root %>% 
@@ -566,7 +567,77 @@ write_csv(roots_data, "data/roots_treatment_data.csv")
 
 
 ## Differences at first sample date
+[Issue #4](https://github.com/whalend/BRU_roots/issues/4)
+If it's already different in April then the treatments may just be maintaining the differences.
+Also could be interpreted as carry-over effect from (treatments) previous year
 
+```{r compare measurements to April}
+depth_april <- depth_data %>% 
+  filter(month_num == 4) %>% 
+  mutate(Tube = as.character(Tube))
+april_means <- depth_april %>% 
+  group_by(treatment) %>% 
+  summarise(avg_length_mm = mean(tot_length_mm),
+            avg_diam_mm = mean(avg_diam_mm),
+            avg_volume_mm3 = mean(tot_volume_mm3))
+month_means <- depth_data %>% 
+  group_by(treatment, month_num) %>% 
+  summarise(avg_length_mm = mean(tot_length_mm),
+            avg_diam_mm = mean(avg_diam_mm),
+            avg_volume_mm3 = mean(tot_volume_mm3))
+
+len <- ggplot(depth_data) +
+  # geom_point(aes(Location, tot_length_mm, color = treatment), alpha = .5) +
+  geom_smooth(aes(Location*-1, tot_length_mm, color = treatment), se = FALSE) +
+  geom_hline(data = april_means, aes(yintercept = avg_length_mm, color = treatment)) +
+  geom_hline(data = month_means, aes(yintercept = avg_length_mm, color = treatment), linetype = "dashed") +
+  coord_flip() +
+  facet_grid(month_num~.)
+
+diam <- ggplot(depth_data) +
+  geom_smooth(aes(Location*-1, avg_diam_mm, color = treatment), se = FALSE) +
+  geom_hline(data = april_means, aes(yintercept = avg_diam_mm, color = treatment)) +
+  geom_hline(data = month_means, aes(yintercept = avg_diam_mm, color = treatment), linetype = "dashed") +
+  coord_flip() +
+  facet_grid(month_num~.)
+
+vol <- ggplot(depth_data) +
+  geom_smooth(aes(Location*-1, tot_volume_mm3, color = treatment), se = FALSE) +
+  geom_hline(data = april_means, aes(yintercept = avg_volume_mm3, color = treatment)) +
+  geom_hline(data = month_means, aes(yintercept = avg_volume_mm3, color = treatment), linetype = "dashed") +
+  coord_flip() +
+  facet_grid(month_num~.)
+
+library(patchwork)
+
+len + xlab("Relative depth") + vol + xlab(" ") + diam + xlab(" ") +
+  plot_layout(guides = "collect")
+```
+
+```{r model comparing measurements in april}
+# depth_data %>% distinct(Tube, block, treatment)# block+Tube = treatment
+tot_length_apr_mod <- lmer(tot_length_mm ~ clipped + clipped:manure + (1|Location) + (1|block/Tube), data = depth_april)
+summary(tot_length_apr_mod)
+tube_re <- sjPlot::plot_model(tot_length_apr_mod, type = "re")[[2]]
+tube_re$data <- tube_re$data %>% 
+  mutate(Tube = str_sub(term, start = 1, end = -3),
+         block = str_sub(term, start = -1, end = -1)) %>% 
+  left_join(., depth_april %>% distinct(Tube, treatment))
+ggplot(tube_re$data, aes(x = term, shape = treatment, color = block)) +
+  geom_point(aes(y = estimate), size = 3) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), size = 1, width = 0) +
+  coord_flip()
+  
+
+avg_diam_apr_mod <- lmer(avg_diam_mm ~ clipped + clipped:manure + (1|Location) + (1|block/Tube), data = depth_april)
+summary(avg_diam_apr_mod)
+
+tot_vol_apr_mod <- lmer(tot_volume_mm3 ~ clipped + clipped:manure + (1|Location) + (1|block/Tube), data = depth_april)
+summary(tot_vol_apr_mod)
+
+# tube_data
+# roots_data
+```
 
 
 ## Root measurements aggregated to measurement depth ("Location")

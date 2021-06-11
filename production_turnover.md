@@ -9,6 +9,8 @@ Root production and turnover
 -   [Modeling](#modeling)
     -   [Gross change](#gross-change)
     -   [Living roots (production)](#living-roots-production)
+    -   [Differences at first sample
+        date](#differences-at-first-sample-date)
     -   [Root measurements aggregated to measurement depth
         (“Location”)](#root-measurements-aggregated-to-measurement-depth-location)
         -   [Models for roots measures aggregated to each
@@ -289,6 +291,117 @@ Random effects (intercepts)
 -   (1\|depth)
 -   (1\|tube)
 -   (1\|month/depth)
+
+## Differences at first sample date
+
+[Issue \#4](https://github.com/whalend/BRU_roots/issues/4) If it’s
+already different in April then the treatments may just be maintaining
+the differences. Also could be interpreted as carry-over effect from
+(treatments) previous year
+
+![](production_turnover_files/figure-gfm/compare%20measurements%20to%20April-1.png)<!-- -->
+
+    ## Linear mixed model fit by REML ['lmerMod']
+    ## Formula: tot_length_mm ~ clipped + clipped:manure + (1 | Location) + (1 |  
+    ##     block/Tube)
+    ##    Data: depth_april
+    ## 
+    ## REML criterion at convergence: 7483.4
+    ## 
+    ## Scaled residuals: 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -2.2834 -0.6883 -0.1792  0.5318  4.2030 
+    ## 
+    ## Random effects:
+    ##  Groups     Name        Variance Std.Dev.
+    ##  Location   (Intercept)  12.48    3.533  
+    ##  Tube:block (Intercept) 112.52   10.607  
+    ##  block      (Intercept)  37.23    6.101  
+    ##  Residual               536.46   23.162  
+    ## Number of obs: 815, groups:  Location, 44; Tube:block, 21; block, 8
+    ## 
+    ## Fixed effects:
+    ##                      Estimate Std. Error t value
+    ## (Intercept)            32.417      5.230   6.199
+    ## clippedyes             -2.812      6.177  -0.455
+    ## clippedyes:manureyes    7.716      5.847   1.320
+    ## 
+    ## Correlation of Fixed Effects:
+    ##             (Intr) clppdy
+    ## clippedyes  -0.693       
+    ## clppdys:mnr -0.005 -0.432
+    ## fit warnings:
+    ## fixed-effect model matrix is rank deficient so dropping 1 column / coefficient
+
+![](production_turnover_files/figure-gfm/model%20comparing%20measurements%20in%20april-1.png)<!-- -->
+
+    ## Linear mixed model fit by REML ['lmerMod']
+    ## Formula: avg_diam_mm ~ clipped + clipped:manure + (1 | Location) + (1 |  
+    ##     block/Tube)
+    ##    Data: depth_april
+    ## 
+    ## REML criterion at convergence: -1199.3
+    ## 
+    ## Scaled residuals: 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -2.0155 -0.5304 -0.1497  0.3330  8.8006 
+    ## 
+    ## Random effects:
+    ##  Groups     Name        Variance Std.Dev.
+    ##  Location   (Intercept) 0.000000 0.00000 
+    ##  Tube:block (Intercept) 0.001271 0.03565 
+    ##  block      (Intercept) 0.001153 0.03396 
+    ##  Residual               0.012530 0.11194 
+    ## Number of obs: 815, groups:  Location, 44; Tube:block, 21; block, 8
+    ## 
+    ## Fixed effects:
+    ##                       Estimate Std. Error t value
+    ## (Intercept)           0.300300   0.020925  14.352
+    ## clippedyes            0.001501   0.022170   0.068
+    ## clippedyes:manureyes -0.009298   0.020821  -0.447
+    ## 
+    ## Correlation of Fixed Effects:
+    ##             (Intr) clppdy
+    ## clippedyes  -0.632       
+    ## clppdys:mnr -0.008 -0.423
+    ## fit warnings:
+    ## fixed-effect model matrix is rank deficient so dropping 1 column / coefficient
+    ## optimizer (nloptwrap) convergence code: 0 (OK)
+    ## boundary (singular) fit: see ?isSingular
+
+    ## Linear mixed model fit by REML ['lmerMod']
+    ## Formula: tot_volume_mm3 ~ clipped + clipped:manure + (1 | Location) +  
+    ##     (1 | block/Tube)
+    ##    Data: depth_april
+    ## 
+    ## REML criterion at convergence: 4537.3
+    ## 
+    ## Scaled residuals: 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -1.3722 -0.6065 -0.2925  0.3161  5.8385 
+    ## 
+    ## Random effects:
+    ##  Groups     Name        Variance Std.Dev.
+    ##  Location   (Intercept)  0.3583  0.5986  
+    ##  Tube:block (Intercept)  1.5832  1.2582  
+    ##  block      (Intercept)  0.0000  0.0000  
+    ##  Residual               14.4805  3.8053  
+    ## Number of obs: 815, groups:  Location, 44; Tube:block, 21; block, 8
+    ## 
+    ## Fixed effects:
+    ##                      Estimate Std. Error t value
+    ## (Intercept)            4.0066     0.5861   6.836
+    ## clippedyes            -0.7991     0.7609  -1.050
+    ## clippedyes:manureyes   0.8062     0.7222   1.116
+    ## 
+    ## Correlation of Fixed Effects:
+    ##             (Intr) clppdy
+    ## clippedyes  -0.752       
+    ## clppdys:mnr  0.000 -0.443
+    ## fit warnings:
+    ## fixed-effect model matrix is rank deficient so dropping 1 column / coefficient
+    ## optimizer (nloptwrap) convergence code: 0 (OK)
+    ## boundary (singular) fit: see ?isSingular
 
 ## Root measurements aggregated to measurement depth (“Location”)
 
