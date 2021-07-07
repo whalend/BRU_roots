@@ -1,0 +1,873 @@
+---
+title: "Highlighted results"
+date: "`r Sys.Date()`"
+output:
+  github_document:
+    toc: yes
+  html_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(fig.height = 7, fig.width = 7, dpi = 300)
+```
+
+```{r load packages and data}
+library(tidyverse)
+library(sjPlot)
+library(patchwork)
+## Import corrected roots data
+df <- read_csv("data/processed_data/mr_roots_data_corrected.csv")
+
+library(readxl)
+## Import plot treatment data
+trt <- read_xlsx("data/treatments.xlsx")
+#cut
+#cut+manure
+#control
+
+mr_plot_data <- read_csv("data/processed_data/mr_plots_monthly_data.csv")
+
+```
+
+```{r add length and diam class groupings}
+## Make size class groupings of root length
+df <- df %>% 
+  # group_by(root_status) %>% 
+  mutate(length_bin = 
+           case_when(
+             Length_mm < 1 ~ "<1 mm",
+             between(Length_mm, 1, 3) ~ "1 - 3 mm",
+             between(Length_mm, 3.0001, 5) ~ ">3 - 5 mm",
+             between(Length_mm, 5.0001, 7) ~ ">5 - 7 mm",
+             between(Length_mm, 7.0001, 9) ~ ">7 - 9 mm",
+             between(Length_mm, 9.0001, 11) ~ ">9 - 11 mm",
+             between(Length_mm, 11.0001, 13) ~ ">11 - 13 mm",
+             between(Length_mm, 13.0001, 15) ~ ">13 - 15 mm",
+             # between(Length_mm, 8.0001, 9) ~ ">8 - 9 mm",
+             # between(Length_mm, 9.0001, 10) ~ ">9 - 10 mm",
+             Length_mm > 15 ~ ">15 mm"
+           ) %>% 
+           factor(levels = c("<1 mm","1 - 3 mm", ">3 - 5 mm", ">5 - 7 mm", 
+                             ">7 - 9 mm", ">9 - 11 mm", ">11 - 13 mm", 
+                             ">13 - 15 mm", 
+                             # ">8 - 9 mm", 
+                             # ">9 - 10 mm", 
+                             ">15 mm"))
+  )
+  
+df <- df %>% mutate(
+  diam_bin = case_when(
+    AvgDiam_mm < .1 ~ "<0.1 mm",
+    between(AvgDiam_mm, .1, .15) ~ "0.1 - 0.15 mm",
+    between(AvgDiam_mm, .15001, .2) ~ ">0.15 - 0.2 mm",
+    between(AvgDiam_mm, .20001, .25) ~ ">0.2 - 0.25 mm",
+    between(AvgDiam_mm, .25001, .3) ~ ">0.25 - 0.3 mm",
+    between(AvgDiam_mm, .30001, .35) ~ ">0.3 - 0.35 mm",
+    AvgDiam_mm > .35 ~ ">0.35 mm"
+    # between(AvgDiam_mm, 4.0001, 4.5) ~ ">4 - 4.5 mm",
+    # between(AvgDiam_mm, 4.5001, 5) ~ ">4.5 - 5 mm",
+    # between(AvgDiam_mm, 5.0001, 5.5) ~ ">5 - 5.5 mm",
+    # between(AvgDiam_mm, 5.5001, 6) ~ ">5.5 - 6 mm",
+    # AvgDiam_mm > 6 ~ ">6 mm"
+    ) %>% 
+    factor(levels = c(
+      "<0.1 mm",
+      "0.1 - 0.15 mm", 
+      ">0.15 - 0.2 mm", 
+      ">0.2 - 0.25 mm",
+      ">0.25 - 0.3 mm",
+      ">0.3 - 0.35 mm",
+      ">0.35 mm"
+      # ">4 - 4.5 mm",
+      # ">4.5 - 5 mm",
+      # ">5 - 5.5 mm",
+      # ">5.5 - 6 mm",
+      # ">6 mm"
+      )
+      )
+  )
+
+df <- left_join(df, trt, by = c("Tube" = "rhizotron_tube"))
+df <- df %>% 
+  mutate(plot_id = paste0(plot, subplot),
+         month_num = Month)
+```
+
+Evaluate effects of treatment (cutting-only, cutting + manure) and composition (bahia, peanut mix)
+
+1. Gross gain and gross loss - effects of treatment and composition
+
+2. Production by treatment and composition - alive length, volume, diameter
+  - Total length
+  - Average diameter
+  - Average vs. total volume
+
+3. LAI model vs. Treatment model (subset of data with no missing LAI values)
+
+
+# Gross gain and loss
+
+**Gross Gain**: growth of existing roots + new roots
+
+**Gross Loss**: loss of existing roots + dead roots + gone roots
+
+```{r individual_root_changes, echo=FALSE}
+## Calculate gross gain and gross loss in length, diameter, and
+## volume between each observation for each root
+
+# calculate change of individual roots
+## given the definition of gross gain & loss could do only 'Alive'
+ind_chg <- df %>% 
+  select(obs_ID, root_ID, Tube, Location, Date, Session, Month, root_status, 
+         Length_mm, AvgDiam_mm, Volume_mm3, treatment) %>% 
+  arrange(root_ID, Session) %>% 
+  group_by(root_ID, root_status, Tube, Location, treatment) %>% 
+  # lag subtracts the previous value; NAs when there is no value to subtract
+  mutate(length_change = Length_mm - lag(Length_mm, n = 1),
+         diam_change = AvgDiam_mm - lag(AvgDiam_mm, n = 1),
+         volume_change = Volume_mm3 - lag(Volume_mm3, n = 1)) %>% 
+  ungroup(.)
+
+## Not a very elegant solution follows...
+ind_gross_chg <- ind_chg %>% 
+  select(-Length_mm:-Volume_mm3) %>%
+  rename(length = length_change, diameter = diam_change, 
+         volume = volume_change) %>% 
+  # long format to use metric as grouping variable
+  pivot_longer(length:volume)
+
+# gross gain = growth of 'Alive' + new roots
+growth <- ind_gross_chg %>% 
+  # summarise growth of existing roots to each depth
+  filter(root_status == 'Alive', value >= 0) %>% 
+  group_by(Tube, Location, Month, name, treatment) %>% 
+  summarise(root_growth = sum(value)) %>% 
+  ungroup(.)
+# summary(growth)
+
+# New roots after April
+new_roots <- ind_gross_chg %>%
+  # only roots that have NA for the change value
+  filter(Month > 4, root_status == 'Alive', is.na(value)) %>% 
+  distinct(root_ID, Tube, Location, Month, treatment) %>% 
+  # get only these root IDs & recombine with gross values
+  left_join(., ind_chg %>% select(root_ID, Tube, Location, Month, Length_mm:Volume_mm3)) %>%
+  # rename in prep for joining with 'growth' data frame
+  rename(length = Length_mm, diameter = AvgDiam_mm, 
+         volume = Volume_mm3) %>%
+  # match data format of 'growth'
+  pivot_longer(length:volume) %>% 
+  group_by(Tube, Location, Month, name, treatment) %>% 
+  summarise(new_roots = sum(value)) %>% 
+  ungroup(.)
+# summary(new_roots)
+# new_roots %>% filter(new_roots>100)
+
+# join growth with new roots
+gain_depth <- left_join(growth, new_roots)
+# add growth & new roots to get gross gain
+gain_depth <- gain_depth %>% 
+  mutate(
+    # hacky solve of NAs from the join
+    new_roots = ifelse(is.na(new_roots), 0, new_roots),
+    gross_gain = root_growth + new_roots
+    )
+# gain_depth %>% summary()
+
+# gross loss = loss in 'Alive' + 'Dead' + 'Gone' 
+# get loss in 'Alive' roots (analogous to 'growth')
+loss <- ind_gross_chg %>%
+  filter(root_status == 'Alive' & value < 0) %>% 
+  group_by(Tube, Location, Month, name, treatment) %>% 
+  summarise(root_loss = sum(abs(value))) %>% 
+  ungroup(.)
+
+# get amounts *newly* 'Dead' and 'Gone' roots (analogous to new_roots)
+dead_gone <- ind_gross_chg %>%
+  # only Dead & Gone roots that have NA for the change value
+  filter(Month > 4, root_status %in% c('Dead', 'Gone'),
+         is.na(value)) %>% 
+  # get only these root IDs & recombine with gross values
+  distinct(root_ID, Tube, Location, Month, treatment) %>% 
+  left_join(., ind_chg %>% select(root_ID, Tube, Location, Month, Length_mm:Volume_mm3, treatment)) %>%
+  rename(length = Length_mm, diameter = AvgDiam_mm,
+         volume = Volume_mm3) %>%
+  pivot_longer(length:volume) %>% 
+  group_by(Tube, Location, Month, name, treatment) %>% 
+  summarise(dg_roots = sum(value)) %>% 
+  ungroup(.)
+
+loss_depth <- left_join(dead_gone, loss)
+loss_depth <- loss_depth %>% 
+  mutate(root_loss = ifelse(is.na(root_loss), 0, root_loss),
+    gross_loss = dg_roots + root_loss)
+# summary(loss_depth)
+
+# Combine so that gross gain and gross loss are in one data frame
+gross_change <- df %>%
+  filter(Month > 4) %>% 
+  distinct(Tube, Location, Month, treatment) %>% 
+  left_join(., gain_depth) %>% 
+  left_join(., loss_depth)
+
+```
+
+```{r plot_root_change, fig.width=6, fig.height=9}
+gc <- gross_change %>% 
+  filter(!is.na(gross_gain)) %>% 
+  select(Tube:name, treatment, gross_gain, gross_loss) %>% 
+  rename(metric = name) %>% 
+  pivot_longer(gross_gain:gross_loss)
+gc <- left_join(gc, select(trt, Tube = rhizotron_tube, composition))
+
+measure <- "length"
+avg_gl <- gc %>% 
+  filter(metric == measure) %>% 
+  group_by(Month, treatment, name, composition) %>% 
+  summarise(avg_value = mean(value, na.rm = T)) %>% 
+  ungroup()
+  
+ggplot(gc %>% filter(metric == measure), aes(Location*-1, value, color = treatment, linetype = name)) +
+  geom_point(alpha = .2, size = .5) +
+  geom_smooth(method = "gam", size = .5, show.legend = T, se = F) +
+  # geom_hline(data = avg_gl, aes(yintercept = avg_value, color = treatment, linetype = name)) +
+  # scale_color_manual(values = c("deepskyblue", "red")) +
+  coord_flip() +
+  facet_grid(Month ~ composition) +
+  xlab("Relative depth") +
+  ylab(paste("Gross change", measure, "(mm)")) +
+  theme_bw() +
+  theme(
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.title = element_blank()
+    )
+```
+
+Gross gain (solid line) and gross loss (dashed line) in root length across sampling depths for each month after the initial sampling in April. Color indicates treatment.
+
+```{r gross change totals plot, fig.width=6, fig.height=4}
+df2 <- gc %>% 
+  # filter(name == "length") %>% 
+  group_by(Tube, Location, treatment, name, composition) %>% 
+  summarise(sum_value = sum(value, na.rm = TRUE)) %>% 
+  ungroup(.) #%>%
+  # pivot_longer(., c(gg_sum, gl_sum))
+
+ggplot(df2 %>% filter(), aes(x = Location*-1, y = sum_value, 
+                             color = treatment, shape = name)) +
+  geom_point(alpha = .5, size = 1) +
+  geom_smooth(aes(linetype = name), method = "gam", size = .8,
+              show.legend = T, se = F) +
+  # scale_color_manual(values = c("deepskyblue", "red")) +
+  coord_flip() +
+  facet_grid(. ~ composition) +
+  xlab("Relative depth") +
+  ylab("Gross length change") +
+  theme_bw() +
+  theme(
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.title = element_blank()
+    )
+```
+
+Bahia generally has greater values than mixed.
+
+```{r model gross length loss}
+library(lme4)
+# separate clipped and manure
+df2 <- df2 %>% 
+  mutate(clipped = as.factor(ifelse(treatment!="control", "yes", "no")),
+         manure = as.factor(ifelse(treatment=="cut+manure", "yes", "no")))
+
+d <- df2 %>%
+  pivot_wider(.,names_from = name, values_from = sum_value)
+
+gl_mod <- lmer(gross_loss ~ clipped + clipped:manure + composition + (1|Location) + (1|Tube), data = d)
+# summary(gl_mod)
+
+# library(patchwork)
+# p1 <- (gl_re_plot[[1]] + xlab("Relative depth")) / 
+#   (gl_re_plot[[2]] + xlab("Tube") + ggtitle("") )
+```
+
+```{r model gross length gain}
+gg_mod <- lmer(gross_gain ~ clipped + clipped:manure + composition + (1|Location) + (1|Tube), data = d)
+# summary(gg_mod)
+
+# p2 <- (gg_re_plot[[1]] + xlab("Relative depth")) /
+#   (gg_re_plot[[2]] + xlab("Tube") + ggtitle(""))
+# 
+# (p1 | p2)
+```
+
+
+### Gross change models table
+```{r gross change models tables}
+tab_model(
+  gg_mod, gl_mod, 
+  pred.labels = c("(Intercept)","Clipped [yes]", "Composition [mixed]", "Clipped * manure"),
+  dv.labels = c("Gross gain", "Gross loss")
+  )
+```
+
+If we compare the intercepts the overall average gain is greater than the overall average loss in root length.
+
+### Gross change models plots
+```{r gross change model coefs plot, fig.width=5, fig.height=5}
+# gg_mod_est <- plot_model(gg_mod, type = "est", colors = "black", show.values = T) +
+  # ggtitle("Gross length gain")
+# gl_mod_est <- plot_model(gl_mod, type = "est", colors = "black", show.values = T) +
+  # ggtitle("Gross length loss")
+
+gc_mods_est <- plot_models(gg_mod, gl_mod, show.values = T, 
+                           m.labels = c("Gross gain", "Gross loss"))
+gc_mods_est$data <- gc_mods_est$data %>% 
+  mutate(term = case_when(
+    term == "clippedyes" ~ "clipped",
+    term == "clippedyes:manureyes" ~ "clipped * manure",
+    term == "compositionmixed" ~ "composition mixed"),
+  )
+
+gc_mods_est +
+  theme_minimal() +
+  scale_x_discrete(limits = rev) +
+  scale_color_manual(values = c("red", "deepskyblue")) +
+  geom_hline(yintercept = 0, linetype = "dotted", alpha = 1) +
+  theme(panel.grid.minor = element_blank(), 
+        legend.position = "top",
+        legend.title = element_blank())
+```
+
+Application of manure appears to reduce the weakly negative effect of clipping. Gain and loss (turnover) were lower in the mixed composition than bahia.
+
+```{r gross change models re plots, fig.width=7.5, fig.height=9}
+gg_mod_re <- plot_model(gg_mod, type = "re", colors = "deepskyblue", title = "Gross gain")
+gl_mod_re <- plot_model(gl_mod, type = "re", colors = "red", title = "Gross loss")
+
+gc_mod_depth_re <- rbind(
+  gg_mod_re[[1]]$data %>% 
+    mutate(title = "Gross gain"), 
+  gl_mod_re[[1]]$data %>% 
+    mutate(title = "Gross loss")
+  )
+
+gc_mod_tube_re <- rbind(
+  gg_mod_re[[2]]$data %>% 
+    mutate(title = "Gross gain"), 
+  gl_mod_re[[2]]$data %>% 
+    mutate(title = "Gross loss")
+  )
+
+gc_depth_re_plot <- ggplot(gc_mod_depth_re, 
+       aes(x = as.factor(reihe*-1), y = estimate, ymin = conf.low, ymax = conf.high, color = title)) +
+  xlab("Relative depth") +
+  geom_errorbar(width = 0, position = position_dodge(width = 1), size = .8) +
+  geom_point(position = position_dodge(width = 1), size = 2) +
+  coord_flip() +
+  # scale_x_discrete(limits = rev) +
+  scale_color_manual(values = c("deepskyblue", "red")) +
+  ylab("Estimate") +
+  ggtitle("Depth random effect") +
+  geom_hline(yintercept = 0, linetype = "dotted", alpha = 1) +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+gc_tube_re_plot <- ggplot(gc_mod_tube_re, 
+       aes(x = term, y = estimate, ymin = conf.low, ymax = conf.high, color = title)) +
+  xlab("Tube") +
+  geom_errorbar(width = 0, position = position_dodge(width = 1), size = .8) +
+  geom_point(position = position_dodge(width = 1), size = 2) +
+  coord_flip() +
+  scale_x_discrete(limits = rev) +
+  scale_color_manual(values = c("deepskyblue", "red")) +
+  ylab("Estimate") +
+  ggtitle("Tube random effect") +
+  geom_hline(yintercept = 0, linetype = "dotted", alpha = 1) +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+(gc_depth_re_plot + theme(legend.position = "none") |
+  gc_tube_re_plot + theme(legend.position = c(.8,.9))) 
+  # plot_layout(guides = "collect") &
+  # theme(legend.position = "bottom")
+# ggsave("figures/gross_change_mod_re_plots.pdf", width = 7.5, height = 9)
+```
+
+Random effects of depth and tube have similar general patterns for gain and loss, with more turnover occurring in the top 10 cm of the soil profile (what would the actual soil depth be given the angle of the tube?) 
+
+# Production
+Here we build and examine models for three metrics of production, i.e. live roots: total root length at each depth window in each tube for each month. The production response was modeled using treatment (clipped, clipped x manure, control), composition (mixed or bahia), soil temperature, and soil moisture as fixed effects, and depth, tube within block, and sampling month as varying-intercept random effects.
+```{r data grouping}
+mr_plot_data <- mr_plot_data %>% 
+  mutate(clipped = as.factor(ifelse(treatment!="control", "yes", "no")),
+         manure = as.factor(ifelse(treatment=="cut+manure", "yes", "no")),
+         total_wt_g = live_wt_g + dead_wt_g)
+
+lai_root <- read_csv("data/processed_data/lai_near_root_sampling.csv")
+lai_root <- lai_root %>% 
+  select(block = Block, plot_id, LAI, root_month)
+
+
+## Calculate the sum and average at each depth window - 1st step up from roots
+depth_data <- df %>% 
+  group_by(plot_id, Tube, block, Location, root_status, month_num, Date) %>% 
+  summarise(tot_length_mm = sum(Length_mm),
+            avg_length_mm = mean(Length_mm),
+            tot_volume_mm3 = sum(Volume_mm3),
+            avg_volume_mm3 = mean(Volume_mm3),
+            tot_diam_mm = sum(AvgDiam_mm),
+            avg_diam_mm = mean(AvgDiam_mm)) %>% 
+  ungroup(.)
+depth_data <- left_join(depth_data, mr_plot_data)
+depth_data <- left_join(depth_data, lai_root, by = c("plot_id", "block", "month_num" = "root_month"))
+
+## Calculate the sum and average at each tube - 2nd step up from roots
+tube_data <- df %>% 
+  group_by(plot_id, Tube, block, root_status, month_num, Date) %>% 
+  summarise(tot_length_mm = sum(Length_mm),
+            avg_length_mm = mean(Length_mm),
+            tot_volume_mm3 = sum(Volume_mm3),
+            avg_volume_mm3 = mean(Volume_mm3),
+            tot_diam_mm = sum(AvgDiam_mm),
+            avg_diam_mm = mean(AvgDiam_mm)) %>% 
+  ungroup(.)
+tube_data <- left_join(tube_data, mr_plot_data)
+tube_data <- left_join(tube_data, lai_root, by = c("plot_id", "block", "month_num" = "root_month"))
+
+tube_model_data <- tube_data %>% 
+  filter(root_status == "Alive")
+
+## Individual roots data.
+roots_data <- read_csv("data/roots_treatment_data.csv")
+
+## Depth aggregated data
+depth_model_data <- read_csv( "data/depth_model_data.csv")
+
+## Subset of data because LAI measurements don't begin until July
+depth_lai_model_data <- depth_model_data %>% 
+  filter(!is.na(LAI))
+```
+
+## Total root length
+```{r depth summed root length model, eval=TRUE}
+len_tot_d1 <- lmer(tot_length_mm ~ max_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_model_data)
+# plot(len_tot_d1)
+# DHARMa::simulateResiduals(len_tot_d1) %>% plot()
+# summary(len_tot_d1)
+pred_labels <- c("(Intercept)", "Max. temp.", "Avg. VWC","Clipped [yes]", "Composition [mixed]", "Clipped * manure")
+equatiomatic::extract_eq(len_tot_d1)
+tab_model(
+  len_tot_d1,
+  pred.labels = pred_labels,
+  dv.labels = "Total root length (mm)")
+
+# model excluding tube 11
+len_tot_mod2 <- lmer(tot_length_mm ~ max_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = filter(depth_model_data, Tube != 11))
+```
+
+
+Total root length tended to be lower with lower soil moisture and in clipped-only treatments 
+
+
+```{r depth summed root length model est plot, fig.height=4, fig.width=4}
+len_mod_est <- plot_model(len_tot_d1, type = "est", show.values = T, colors = "bw")
+len_mod_est$data$term <- factor(len_mod_est$data$term, labels = pred_labels[6:2])
+len_mod_est +
+  # scale_x_discrete(limits = rev) +
+  ggtitle("Total root length (mm)") +
+  theme_minimal() +
+  geom_hline(yintercept = 0, linetype = "dotted", alpha = .7) +
+  theme(plot.title = element_text(hjust = .5))
+```
+
+```{r depth summed root length model re plots}
+re <- plot_model(len_tot_d1, type = "re", colors = "bw")
+library(patchwork)
+( (re[[1]] + scale_x_discrete(limits = rev) + xlab("Depth")) |
+  (re[[2]] + scale_x_discrete(limits = rev) + xlab("Tube:Block")) |
+  (re[[3]] + scale_x_discrete(limits = rev) + xlab("Block")) |
+  (re[[4]] + scale_x_discrete(limits = rev) + xlab("Month")) ) &
+  theme_minimal() &
+  geom_hline(yintercept = 0, linetype = "dotted", alpha = .7) &
+  theme(panel.grid.minor.x = element_blank(),
+        plot.title = element_blank())
+  # plot_annotation(title = "Random effects for total length")
+```
+
+
+### What's up with length x depth in each tube?
+One of these is not like the others...it looks like tube 11 is likely producing substantial leverage.
+
+```{r length across depth by tube}
+ggplot(depth_model_data, aes(depth*-1, tot_length_mm, color = as.factor(Tube))) +
+  geom_smooth() +
+  facet_wrap(~Tube) +
+  coord_flip()
+
+plot_models(len_tot_d1, len_tot_mod2, show.values = T) +
+  theme(legend.position = c(.12,.9))
+```
+
+Model "2" excludes tube 11 from the data. Tube 11 is a "control" plot.
+
+**Model excluding tube 11**
+
+Block 4 appears to be rather productive in general. Tube 10 is a cut + manure plot.
+
+```{r re excluding tube 11}
+# plot_model(len_tot_mod2, type = "re", colors = "bw")
+
+( re[[2]] + scale_x_discrete(limits = rev) + xlab("Tube:Block") |
+  plot_model(len_tot_mod2, type = "re", colors = "bw")[[2]] ) &
+  plot_annotation(title = "With and without Tube 11")
+```
+
+
+### Tube level aggregation
+
+```{r tube root length model}
+tube_len_m1 <- lmer(avg_length_mm ~ max_temp + avg_vwc + clipped + clipped:manure + composition + (1|block/Tube) + (1|month_num), data = tube_model_data)
+tube_len_m2 <- lmer(tot_length_mm ~ max_temp + avg_vwc + clipped + clipped:manure + composition + (1|block/Tube) + (1|month_num), data = tube_model_data)
+# summary(tube_len_m1)
+# summary(tube_len_m2)
+
+tab_model(tube_len_m1, tube_len_m2,
+          pred.labels = pred_labels,
+          dv.labels = c("Avg. root length (mm)", "Total length (mm)"))
+```
+
+```{r tube root length model est plot}
+plot_model(tube_len_m1, show.values = T)
+plot_model(tube_len_m2, show.values = T)
+```
+
+```{r tube root length model re plot}
+plot_model(tube_len_m1, type = "re")[[1]] + ggtitle("Avg. tube root length: tube")|
+  plot_model(tube_len_m2, type = "re")[[1]] + ggtitle("Total tube root length: tube")
+
+plot_model(tube_len_m1, type = "re")[[2]] + ggtitle("Avg. tube root length: block")|
+  plot_model(tube_len_m2, type = "re")[[2]] + ggtitle("Total tube root length: block")
+
+plot_model(tube_len_m1, type = "re")[[3]] + ggtitle("Avg. tube root length: month")|
+  plot_model(tube_len_m2, type = "re")[[3]] + ggtitle("Total tube root length: month")
+
+## Models excluding tube 11 
+tube_len_m1a <- lmer(avg_length_mm ~ max_temp + avg_vwc + clipped + clipped:manure + composition + (1|block/Tube) + (1|month_num), data = filter(tube_model_data, Tube != 11))
+tube_len_m2a <- lmer(tot_length_mm ~ max_temp + avg_vwc + clipped + clipped:manure + composition + (1|block/Tube) + (1|month_num), data = filter(tube_model_data, Tube != 11))
+# tab_model(tube_len_m1a, tube_len_m2a)
+
+```
+
+
+## Average root diameter
+
+### Depth window aggregation
+```{r depth avg root diameter model}
+diam_avg_d2 <- lmer(avg_diam_mm ~ min_temp + avg_vwc + clipped + clipped:manure + composition + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_model_data)
+
+pred_labels <- c("(Intercept)", "Min. temp.", "Avg. VWC","Clipped [yes]", "Composition [mixed]", "Clipped * manure")
+equatiomatic::extract_eq(diam_avg_d2)
+tab_model(diam_avg_d2,
+          dv.labels = "Average root diameter (mm)",
+          pred.labels = pred_labels
+          )
+```
+
+```{r depth avg root diameter model est plot, fig.height=4, fig.width=4}
+diam_avg_est <- plot_model(diam_avg_d2, type = "est", show.values = T, colors = "bw")
+diam_avg_est$data$term <- factor(diam_avg_est$data$term, labels = pred_labels[2:6])
+diam_avg_est +
+  scale_x_discrete(limits = rev) +
+  scale_y_continuous(limits = c(-.1,.1)) +
+  ylab("Estimates") +
+  ggtitle("Average root diameter (mm)") +
+  theme_minimal() +
+  geom_hline(yintercept = 0, linetype = "dotted", alpha = .7) +
+  theme(plot.title = element_text(hjust = .5))
+```
+
+```{r depth avg root diameter model re plots}
+re <- plot_model(diam_avg_d2, type = "re")
+
+( (re[[1]] + scale_x_discrete(limits = rev) + xlab("Depth")) |
+  (re[[2]] + scale_x_discrete(limits = rev) + xlab("Tube:Block")) |
+  (re[[3]] + scale_x_discrete(limits = rev) + xlab("Block")) |
+  (re[[4]] + scale_x_discrete(limits = rev) + xlab("Month")) ) &
+  theme_minimal() &
+  geom_hline(yintercept = 0, linetype = "dotted", alpha = .7) &
+  scale_y_continuous(limits = c(-.1,.1)) &
+  theme(panel.grid.minor.x = element_blank(),
+        plot.title = element_blank())
+```
+
+### Tube level aggregation
+```{r tube root diameter model}
+dia_avg_m1 <- lmer(avg_diam_mm ~ max_temp + avg_vwc + clipped + clipped:manure + composition + (1|block/Tube) + (1|month_num), data = tube_model_data)
+dia_tot_m3 <- lmer(tot_diam_mm ~ avg_temp + avg_vwc + clipped + clipped:manure + composition + (1|block/Tube) + (1|month_num), data = tube_model_data)
+tab_model(dia_avg_m1, dia_tot_m3, 
+          title = "Tube aggregated models",
+          dv.labels = c("Average root diameter (mm)", "Total root diameter (mm)"))
+```
+
+```{r tube root diameter model coefs plot, fig.width=4, fig.height=6}
+pred_labels[2] <- "Max. temp."
+tube_avg_diam_coefs <- plot_model(
+  dia_avg_m1, type = "est", show.values = T, color = "bw", value.offset = .2, 
+  title = "Tube average diameter model") +
+  scale_y_continuous(limits = c(-.1, .1)) +
+  theme_minimal() +
+  geom_hline(yintercept = 0, linetype = "dotted")
+tube_avg_diam_coefs$data$term <- factor(tube_avg_diam_coefs$data$term, labels = pred_labels[6:2])
+
+
+tube_tot_diam_coefs <- plot_model(
+  dia_tot_m3, type = "est", show.values = T, color = "bw", value.offset = .2, 
+  title = "Tube total diameter model") +
+  theme_minimal() +
+  geom_hline(yintercept = 0, linetype = "dotted")
+pred_labels[2] <- "Avg. temp."
+tube_tot_diam_coefs$data$term <- factor(tube_tot_diam_coefs$data$term, labels = pred_labels[6:2])
+
+tube_avg_diam_coefs/tube_tot_diam_coefs
+```
+
+```{r tube root diameter re plots}
+re_tube_avg_dia <- plot_model(dia_avg_m1, type = "re", color = "bw")
+( ( re_tube_avg_dia[[1]] +
+  scale_y_continuous(limits = c(-.1,.1), minor_breaks = NULL) +
+  scale_x_discrete(limits = rev) +
+  ggtitle("", subtitle = "Tube random effect") ) |
+  ( re_tube_avg_dia[[2]] +
+      scale_y_continuous(limits = c(-.1,.1), minor_breaks = NULL) +
+      scale_x_discrete(limits = rev) +
+      ggtitle("", subtitle = "Block random effect") ) |
+  ( re_tube_avg_dia[[3]] +
+      scale_y_continuous(limits = c(-.1,.1), minor_breaks = NULL) +
+      scale_x_discrete(limits = rev) +
+      ggtitle("", subtitle = "Month random effect") ) )&
+  theme_minimal() &
+  geom_hline(yintercept = 0, linetype = "dotted") &
+  ylab("Estimate") &
+  plot_annotation(title = "Tube average diameter") 
+
+re_tube_tot_dia <- plot_model(dia_tot_m3, type = "re", color = "bw")
+( ( re_tube_tot_dia[[1]] +
+  # scale_y_continuous(limits = c(-.1,.1)) +
+  scale_x_discrete(limits = rev) +
+  ggtitle("", subtitle = "Tube random effect") ) |
+  ( re_tube_tot_dia[[2]] +
+      # scale_y_continuous(limits = c(-.1,.1)) +
+      scale_x_discrete(limits = rev) +
+      ggtitle("", subtitle = "Block random effect") ) |
+  ( re_tube_tot_dia[[3]] +
+      # scale_y_continuous(limits = c(-.1,.1)) +
+      scale_x_discrete(limits = rev) +
+      ggtitle("", subtitle = "Month random effect") ) ) &
+  theme_minimal() &
+  geom_hline(yintercept = 0, linetype = "dotted") &
+  theme(panel.grid.minor.x = element_blank()) &
+  plot_annotation(title = "Tube total diameter")
+```
+
+
+## Root volume
+
+### Depth window aggregation
+```{r depth root volume models}
+volume_avg_mod <- lmer(avg_volume_mm3 ~ avg_temp + avg_vwc + clipped + composition + clipped:manure + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_model_data)
+
+volume_tot_mod <- lmer(tot_volume_mm3 ~ avg_temp + avg_vwc + clipped + composition + clipped:manure + (1 | depth) + (1 | block/Tube) + (1 | month_num), data = depth_model_data)
+```
+
+```{r depth root volume models table}
+pred_labels <- c("(Intercept)", "Avg. temp.", "Avg. VWC", "Clipped [yes]", "Composition [mixed]", "Clipped * manure")
+tab_model(volume_tot_mod, volume_avg_mod,
+          dv.labels = c("Total volume", "Average volume"),
+          pred.labels = pred_labels)
+```
+
+
+```{r depth root volume models coefs plots}
+vol_mods_est <- plot_models(volume_tot_mod, volume_avg_mod, show.values = T,
+                            m.labels = c("Total volume", "Average volume"))
+
+vol_mods_est$data <- vol_mods_est$data %>% 
+  mutate(term = factor(term, labels = pred_labels[2:length(pred_labels)]))
+
+vol_mods_est +
+  theme_minimal() +
+  scale_x_discrete(limits = rev) +
+  scale_color_manual(values = c("red", "deepskyblue")) +
+  geom_hline(yintercept = 0, linetype = "dotted", alpha = 1) +
+  theme(panel.grid.minor = element_blank(), 
+        legend.position = "top",
+        legend.title = element_blank())
+```
+
+```{r depth root volume models re plots}
+vol_tot_re <- plot_model(volume_tot_mod, type = "re", colors = "deepskyblue", title = "Total volume")
+vol_avg_re <- plot_model(volume_avg_mod, type = "re", colors = "red", title = "Average volume")
+
+vol_mod_depth_re <- rbind(
+  vol_tot_re[[1]]$data %>% 
+    mutate(title = "Total volume"), 
+  vol_avg_re[[1]]$data %>% 
+    mutate(title = "Average volume")
+  )
+vol_mod_tube_re <- rbind(
+  vol_tot_re[[2]]$data %>% 
+    mutate(title = "Total volume"), 
+  vol_avg_re[[2]]$data %>% 
+    mutate(title = "Average volume")
+  )
+vol_mod_block_re <- rbind(
+  vol_tot_re[[3]]$data %>% 
+    mutate(title = "Total volume"), 
+  vol_avg_re[[3]]$data %>% 
+    mutate(title = "Average volume")
+  )
+vol_mod_month_re <- rbind(
+  vol_tot_re[[4]]$data %>% 
+    mutate(title = "Total volume"), 
+  vol_avg_re[[4]]$data %>% 
+    mutate(title = "Average volume")
+  )
+
+vol_depth_re_plot <- ggplot(vol_mod_depth_re, 
+       aes(x = as.factor(reihe*-1), y = estimate, ymin = conf.low, ymax = conf.high, color = title)) +
+  xlab("Relative depth") +
+  geom_errorbar(width = 0, position = position_dodge(width = 1), size = .8) +
+  geom_point(position = position_dodge(width = 1), size = 2) +
+  coord_flip() +
+  # scale_x_discrete(limits = rev) +
+  scale_color_manual(values = c("deepskyblue", "red")) +
+  ylab("Estimate") +
+  ggtitle("") +
+  geom_hline(yintercept = 0, linetype = "dotted", alpha = 1) +
+  theme_minimal() +
+  theme(legend.title = element_blank(),
+        legend.position = c(.2,.9))
+
+vol_tube_re_plot <- ggplot(vol_mod_tube_re, 
+       aes(x = term, y = estimate, ymin = conf.low, ymax = conf.high, color = title)) +
+  xlab("Tube") +
+  geom_errorbar(width = 0, position = position_dodge(width = 1), size = .8) +
+  geom_point(position = position_dodge(width = 1), size = 2) +
+  coord_flip() +
+  scale_x_discrete(limits = rev) +
+  scale_color_manual(values = c("deepskyblue", "red")) +
+  ylab("Estimate") +
+  ggtitle("") +
+  geom_hline(yintercept = 0, linetype = "dotted", alpha = 1) +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+vol_block_re_plot <- ggplot(vol_mod_block_re, 
+       aes(x = term, y = estimate, ymin = conf.low, ymax = conf.high, color = title)) +
+  xlab("Block") +
+  geom_errorbar(width = 0, position = position_dodge(width = 1), size = .8) +
+  geom_point(position = position_dodge(width = 1), size = 2) +
+  coord_flip() +
+  scale_x_discrete(limits = rev) +
+  scale_color_manual(values = c("deepskyblue", "red")) +
+  ylab("Estimate") +
+  ggtitle("") +
+  geom_hline(yintercept = 0, linetype = "dotted", alpha = 1) +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+vol_month_re_plot <- ggplot(vol_mod_month_re, 
+       aes(x = term, y = estimate, ymin = conf.low, ymax = conf.high, color = title)) +
+  xlab("Month") +
+  geom_errorbar(width = 0, position = position_dodge(width = 1), size = .8) +
+  geom_point(position = position_dodge(width = 1), size = 2) +
+  coord_flip() +
+  scale_x_discrete(limits = rev) +
+  scale_color_manual(values = c("deepskyblue", "red")) +
+  ylab("Estimate") +
+  ggtitle("") +
+  geom_hline(yintercept = 0, linetype = "dotted", alpha = 1) +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+( vol_depth_re_plot + theme(legend.position = "none") |
+  vol_tube_re_plot + theme(legend.position = "none") | 
+    vol_block_re_plot + theme(legend.position = "none") |
+    vol_month_re_plot + theme(legend.position = "none") ) +
+  plot_annotation(title = "Random effects")
+```
+
+
+### Tube level aggregation
+```{r tube root volume models}
+tube_vol_avg_m1 <- lmer(avg_volume_mm3 ~ max_temp + avg_vwc + clipped + clipped:manure + composition + (1|block/Tube) + (1|month_num), data = tube_model_data)
+tube_vol_tot_m1 <- lmer(tot_volume_mm3 ~ avg_temp + avg_vwc + clipped + clipped:manure + composition + (1|block/Tube) + (1|month_num), data = tube_model_data)
+tab_model(tube_vol_avg_m1, tube_vol_tot_m1,
+          dv.labels = c("Tube average volume", "Tube total volume"))
+```
+
+```{r tube root volume model coefs plot, fig.width=4, fig.height=6}
+pred_labels[2] <- "Max. temp."
+tube_avg_vol_coefs <- plot_model(
+  tube_vol_avg_m1, show.values = T, color = "bw", value.offset = .2, 
+  title = "Tube average volume model") +
+  scale_y_continuous(limits = c(-.4, .4)) +
+  theme_minimal() +
+  geom_hline(yintercept = 0, linetype = "dotted")
+tube_avg_vol_coefs$data$term <- factor(tube_avg_vol_coefs$data$term, labels = pred_labels[6:2])
+
+pred_labels[2] <- "Avg. temp."
+tube_tot_vol_coefs <- plot_model(
+  tube_vol_tot_m1, show.values = T, color = "bw", value.offset = .2, 
+  title = "Tube total volume model") +
+  scale_y_continuous(limits = c(-100, 100)) +
+  theme_minimal() +
+  geom_hline(yintercept = 0, linetype = "dotted")
+tube_tot_vol_coefs$data$term <- factor(tube_tot_vol_coefs$data$term, labels = pred_labels[6:2])
+
+tube_avg_vol_coefs/tube_tot_vol_coefs
+```
+
+```{r tube root volume re plots}
+re_tube_vol_avg <- plot_model(tube_vol_avg_m1, type = "re", grid = T)
+( ( re_tube_vol_avg[[1]] +
+  scale_y_continuous(limits = c(-.4,.4), minor_breaks = NULL) +
+  scale_x_discrete(limits = rev) +
+  ggtitle("", subtitle = "Tube random effect") ) |
+  ( re_tube_vol_avg[[2]] +
+      scale_y_continuous(limits = c(-.4,.4), minor_breaks = NULL) +
+      scale_x_discrete(limits = rev) +
+      ggtitle("", subtitle = "Block random effect") ) |
+  ( re_tube_vol_avg[[3]] +
+      scale_y_continuous(limits = c(-.4,.4), minor_breaks = NULL) +
+      scale_x_discrete(limits = rev) +
+      ggtitle("", subtitle = "Month random effect") ) )&
+  theme_minimal() &
+  geom_hline(yintercept = 0, linetype = "dotted") &
+  ylab("Estimate") &
+  plot_annotation(title = "Tube average volume")
+
+
+re_tube_vol_tot <- plot_model(tube_vol_tot_m1, type = "re", grid = T)
+( ( re_tube_vol_tot[[1]] +
+  scale_y_continuous(limits = c(-125, 200), minor_breaks = NULL) +
+  scale_x_discrete(limits = rev) +
+  ggtitle("", subtitle = "Tube random effect") ) |
+  ( re_tube_vol_tot[[2]] +
+      scale_y_continuous(limits = c(-100, 125), minor_breaks = NULL) +
+      scale_x_discrete(limits = rev) +
+      ggtitle("", subtitle = "Block random effect") ) |
+  ( re_tube_vol_tot[[3]] +
+      scale_y_continuous(limits = c(-25, 25), minor_breaks = NULL) +
+      scale_x_discrete(limits = rev) +
+      ggtitle("", subtitle = "Month random effect") ) )&
+  theme_minimal() &
+  geom_hline(yintercept = 0, linetype = "dotted") &
+  ylab("Estimate") &
+  plot_annotation(title = "Tube total volume")
+```
+
