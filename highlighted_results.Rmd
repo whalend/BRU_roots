@@ -503,7 +503,7 @@ library(patchwork)
 One of these is not like the others...it looks like tube 11 is likely producing substantial leverage.
 
 ```{r length across depth by tube}
-ggplot(depth_model_data, aes(depth*-1, tot_length_mm, color = as.factor(Tube))) +
+ggplot(depth_model_data, aes(depth*-1, tot_length_mm, color = treatment)) +
   geom_smooth() +
   facet_wrap(~Tube) +
   coord_flip()
