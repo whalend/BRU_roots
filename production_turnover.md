@@ -299,6 +299,9 @@ already different in April then the treatments may just be maintaining
 the differences. Also could be interpreted as carry-over effect from
 (treatments) previous year
 
+tubes 6, 15, 23 replaced in April - check these tubes specifically
+*don’t appear to influence the overall pattern*
+
 ![](production_turnover_files/figure-gfm/compare%20measurements%20to%20April-1.png)<!-- -->
 
     ## Linear mixed model fit by REML ['lmerMod']
@@ -503,9 +506,7 @@ The model pseudocode is:
     ## fit warnings:
     ## fixed-effect model matrix is rank deficient so dropping 1 column / coefficient
 
-![](production_turnover_files/figure-gfm/depth%20summed%20root%20length-3.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20summed%20root%20length-4.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20summed%20root%20length-5.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20summed%20root%20length-6.png)<!-- -->
-
-<!-- #### Average root length model with LAI -->
+![](production_turnover_files/figure-gfm/depth%20summed%20root%20length-3.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20summed%20root%20length-4.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20summed%20root%20length-5.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20summed%20root%20length-6.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20summed%20root%20length-7.png)<!-- -->
 
 #### Summed root length model with LAI
 
@@ -590,6 +591,434 @@ from models with LAI
 
 Pretty strong negative relationship with average LAI and maximum
 temperature but not with nearest LAI value.
+
+#### Summed root length model with mass from clippings
+
+    ##       Tube           depth       tot_length_mm      avg_length_mm    
+    ##  Min.   : 1.00   Min.   : 1.00   Min.   :  0.3161   Min.   : 0.3161  
+    ##  1st Qu.: 7.00   1st Qu.:11.00   1st Qu.: 14.7901   1st Qu.: 4.1041  
+    ##  Median :12.00   Median :22.00   Median : 29.8750   Median : 5.9192  
+    ##  Mean   :12.47   Mean   :21.81   Mean   : 37.4815   Mean   : 6.9487  
+    ##  3rd Qu.:18.00   3rd Qu.:33.00   3rd Qu.: 50.5549   3rd Qu.: 8.7139  
+    ##  Max.   :24.00   Max.   :44.00   Max.   :277.3802   Max.   :44.8058  
+    ##                                                                      
+    ##  tot_volume_mm3    avg_volume_mm3     tot_diam_mm       avg_diam_mm     
+    ##  Min.   : 0.0031   Min.   : 0.0031   Min.   :0.08131   Min.   :0.08131  
+    ##  1st Qu.: 0.8904   1st Qu.: 0.2233   1st Qu.:0.68073   1st Qu.:0.22543  
+    ##  Median : 2.4819   Median : 0.4522   Median :1.26195   Median :0.26555  
+    ##  Mean   : 3.7490   Mean   : 0.7686   Mean   :1.59269   Mean   :0.28535  
+    ##  3rd Qu.: 5.1141   3rd Qu.: 0.9305   3rd Qu.:2.16067   3rd Qu.:0.32184  
+    ##  Max.   :40.5984   Max.   :17.4783   Max.   :9.08160   Max.   :1.30089  
+    ##                                                                         
+    ##  composition        clipped    manure       month_num         avg_vwc      
+    ##  Length:7485        no :2317   no :4857   Min.   : 4.000   Min.   : 2.500  
+    ##  Class :character   yes:5168   yes:2628   1st Qu.: 6.000   1st Qu.: 5.050  
+    ##  Mode  :character                         Median : 8.000   Median : 7.320  
+    ##                                           Mean   : 7.564   Mean   : 9.584  
+    ##                                           3rd Qu.:10.000   3rd Qu.: 9.960  
+    ##                                           Max.   :11.000   Max.   :32.225  
+    ##                                                                            
+    ##     avg_temp        max_temp        min_temp        avg_lai      
+    ##  Min.   :19.80   Min.   :23.60   Min.   :16.00   Min.   :0.1390  
+    ##  1st Qu.:23.68   1st Qu.:24.50   1st Qu.:22.40   1st Qu.:0.8963  
+    ##  Median :25.32   Median :26.40   Median :23.80   Median :1.6910  
+    ##  Mean   :24.81   Mean   :26.17   Mean   :23.36   Mean   :2.3400  
+    ##  3rd Qu.:26.48   3rd Qu.:27.50   3rd Qu.:25.60   3rd Qu.:3.1500  
+    ##  Max.   :28.42   Max.   :29.80   Max.   :27.60   Max.   :6.9840  
+    ##                                                  NA's   :2747    
+    ##       LAI          total_wt_g        block         plot_id         
+    ##  Min.   :0.139   Min.   :15.12   Min.   :1.000   Length:7485       
+    ##  1st Qu.:0.613   1st Qu.:20.25   1st Qu.:3.000   Class :character  
+    ##  Median :0.952   Median :30.11   Median :4.000   Mode  :character  
+    ##  Mean   :2.046   Mean   :29.07   Mean   :4.492                     
+    ##  3rd Qu.:3.528   3rd Qu.:38.09   3rd Qu.:6.000                     
+    ##  Max.   :7.065   Max.   :49.20   Max.   :8.000                     
+    ##  NA's   :1808    NA's   :6883                                      
+    ##   treatment         std2_max_temp      std2_min_temp      std2_avg_temp    
+    ##  Length:7485        Min.   :-0.78658   Min.   :-1.21567   Min.   :-1.1396  
+    ##  Class :character   1st Qu.:-0.51135   1st Qu.:-0.15906   1st Qu.:-0.2581  
+    ##  Mode  :character   Median : 0.06971   Median : 0.07207   Median : 0.1173  
+    ##                     Mean   : 0.00000   Mean   : 0.00000   Mean   : 0.0000  
+    ##                     3rd Qu.: 0.40611   3rd Qu.: 0.36924   3rd Qu.: 0.3789  
+    ##                     Max.   : 1.10950   Max.   : 0.69943   Max.   : 0.8214  
+    ##                                                                            
+    ##   std2_avg_vwc      std2_avg_lai          wt_g       
+    ##  Min.   :-0.4976   Min.   :-0.6002   Min.   : 574.8  
+    ##  1st Qu.:-0.3185   1st Qu.:-0.3937   1st Qu.: 775.8  
+    ##  Median :-0.1590   Median :-0.1770   Median :1204.3  
+    ##  Mean   : 0.0000   Mean   : 0.0000   Mean   :1180.1  
+    ##  3rd Qu.: 0.0264   3rd Qu.: 0.2209   3rd Qu.:1392.0  
+    ##  Max.   : 1.5902   Max.   : 1.2664   Max.   :2164.8  
+    ##                    NA's   :2747      NA's   :2597
+
+![](production_turnover_files/figure-gfm/depth%20summed%20root%20length%20mass-1.png)<!-- -->
+
+    ## Linear mixed model fit by REML ['lmerMod']
+    ## Formula: tot_length_mm ~ max_temp + avg_vwc + wt_g + composition + (1 |  
+    ##     depth) + (1 | month_num) + (1 | block/Tube)
+    ##    Data: wt_data
+    ## 
+    ## REML criterion at convergence: 44920.4
+    ## 
+    ## Scaled residuals: 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -2.5273 -0.7344 -0.1689  0.5769  4.4687 
+    ## 
+    ## Random effects:
+    ##  Groups     Name        Variance  Std.Dev. 
+    ##  depth      (Intercept) 2.982e+01  5.460621
+    ##  Tube:block (Intercept) 7.469e+01  8.642273
+    ##  block      (Intercept) 2.172e-07  0.000466
+    ##  month_num  (Intercept) 2.690e+01  5.186685
+    ##  Residual               5.552e+02 23.563191
+    ## Number of obs: 4888, groups:  depth, 44; Tube:block, 15; block, 8; month_num, 8
+    ## 
+    ## Fixed effects:
+    ##                    Estimate Std. Error t value
+    ## (Intercept)       74.787257  20.606907   3.629
+    ## max_temp          -1.694652   0.732369  -2.314
+    ## avg_vwc           -0.154415   0.200027  -0.772
+    ## wt_g               0.010366   0.005572   1.860
+    ## compositionmixed -11.230995   4.845126  -2.318
+    ## 
+    ## Correlation of Fixed Effects:
+    ##             (Intr) mx_tmp avg_vw wt_g  
+    ## max_temp    -0.940                     
+    ## avg_vwc     -0.053 -0.038              
+    ## wt_g        -0.271 -0.005 -0.015       
+    ## compostnmxd -0.083  0.087  0.014 -0.348
+    ## optimizer (nloptwrap) convergence code: 0 (OK)
+    ## boundary (singular) fit: see ?isSingular
+
+<table style="border-collapse:collapse; border:none;">
+<tr>
+<th style="border-top: double; text-align:center; font-style:normal; font-weight:bold; padding:0.2cm;  text-align:left; ">
+ 
+</th>
+<th colspan="3" style="border-top: double; text-align:center; font-style:normal; font-weight:bold; padding:0.2cm; ">
+tot\_length\_mm
+</th>
+</tr>
+<tr>
+<td style=" text-align:center; border-bottom:1px solid; font-style:italic; font-weight:normal;  text-align:left; ">
+Predictors
+</td>
+<td style=" text-align:center; border-bottom:1px solid; font-style:italic; font-weight:normal;  ">
+Estimates
+</td>
+<td style=" text-align:center; border-bottom:1px solid; font-style:italic; font-weight:normal;  ">
+CI
+</td>
+<td style=" text-align:center; border-bottom:1px solid; font-style:italic; font-weight:normal;  ">
+p
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+(Intercept)
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+74.79
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+34.40 – 115.18
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+<strong>&lt;0.001
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+max\_temp
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+-1.69
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+-3.13 – -0.26
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+<strong>0.021</strong>
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+avg\_vwc
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+-0.15
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+-0.55 – 0.24
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.440
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+wt\_g
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.01
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+-0.00 – 0.02
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.063
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+composition \[mixed\]
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+-11.23
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+-20.73 – -1.73
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+<strong>0.020</strong>
+</td>
+</tr>
+<tr>
+<td colspan="4" style="font-weight:bold; text-align:left; padding-top:.8em;">
+Random Effects
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+σ<sup>2</sup>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+555.22
+</td>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+τ<sub>00</sub> <sub>depth</sub>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+29.82
+</td>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+τ<sub>00</sub> <sub>Tube:block</sub>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+74.69
+</td>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+τ<sub>00</sub> <sub>block</sub>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+0.00
+</td>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+τ<sub>00</sub> <sub>month\_num</sub>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+26.90
+</td>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+ICC
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+0.19
+</td>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+N <sub>depth</sub>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+44
+</td>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+N <sub>month\_num</sub>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+8
+</td>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+N <sub>Tube</sub>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+15
+</td>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+N <sub>block</sub>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+8
+</td>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm; border-top:1px solid;">
+Observations
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left; border-top:1px solid;" colspan="3">
+4888
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+Marginal R<sup>2</sup> / Conditional R<sup>2</sup>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+0.053 / 0.234
+</td>
+</tr>
+</table>
+
+![](production_turnover_files/figure-gfm/depth%20summed%20root%20length%20mass-2.png)<!-- -->
+
+    ## $max_temp
+
+![](production_turnover_files/figure-gfm/depth%20summed%20root%20length%20mass-3.png)<!-- -->
+
+    ## 
+    ## $avg_vwc
+
+![](production_turnover_files/figure-gfm/depth%20summed%20root%20length%20mass-4.png)<!-- -->
+
+    ## 
+    ## $wt_g
+
+![](production_turnover_files/figure-gfm/depth%20summed%20root%20length%20mass-5.png)<!-- -->
+
+    ## 
+    ## $composition
+
+![](production_turnover_files/figure-gfm/depth%20summed%20root%20length%20mass-6.png)<!-- -->
+
+    ## [[1]]
+
+![](production_turnover_files/figure-gfm/depth%20summed%20root%20length%20mass-7.png)<!-- -->
+
+    ## 
+    ## [[2]]
+
+![](production_turnover_files/figure-gfm/depth%20summed%20root%20length%20mass-8.png)<!-- -->
+
+    ## 
+    ## [[3]]
+
+![](production_turnover_files/figure-gfm/depth%20summed%20root%20length%20mass-9.png)<!-- -->
+
+    ## 
+    ## [[4]]
+
+![](production_turnover_files/figure-gfm/depth%20summed%20root%20length%20mass-10.png)<!-- -->
+
+    ## Linear mixed model fit by REML ['lmerMod']
+    ## Formula: tot_length_mm ~ max_temp + avg_vwc + total_wt_g + composition +  
+    ##     (1 | depth) + (1 | block/Tube)
+    ##    Data: depth_model_data
+    ## 
+    ## REML criterion at convergence: 5530.5
+    ## 
+    ## Scaled residuals: 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -2.2302 -0.6778 -0.1678  0.5291  4.1304 
+    ## 
+    ## Random effects:
+    ##  Groups     Name        Variance Std.Dev.
+    ##  depth      (Intercept)   3.929   1.982  
+    ##  Tube:block (Intercept) 133.536  11.556  
+    ##  block      (Intercept)  42.372   6.509  
+    ##  Residual               555.182  23.562  
+    ## Number of obs: 602, groups:  depth, 44; Tube:block, 15; block, 8
+    ## 
+    ## Fixed effects:
+    ##                  Estimate Std. Error t value
+    ## (Intercept)      114.3684   186.3632   0.614
+    ## max_temp          -4.2095     7.3537  -0.572
+    ## avg_vwc            1.9453     2.4772   0.785
+    ## total_wt_g         0.6320     0.4018   1.573
+    ## compositionmixed  -8.1552     9.3548  -0.872
+    ## 
+    ## Correlation of Fixed Effects:
+    ##             (Intr) mx_tmp avg_vw ttl_w_
+    ## max_temp    -0.995                     
+    ## avg_vwc     -0.014 -0.072              
+    ## total_wt_g   0.177 -0.239  0.144       
+    ## compostnmxd -0.399  0.411 -0.131 -0.447
+
+    ## Linear mixed model fit by REML ['lmerMod']
+    ## Formula: 
+    ## tot_length_mm ~ max_temp + avg_vwc + wt_g + composition + as.factor(month_num) +  
+    ##     (1 | depth) + (1 | block/Tube)
+    ##    Data: wt_data
+    ## 
+    ## REML criterion at convergence: 44871.5
+    ## 
+    ## Scaled residuals: 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -2.5702 -0.7360 -0.1660  0.5775  4.4206 
+    ## 
+    ## Random effects:
+    ##  Groups     Name        Variance Std.Dev.
+    ##  depth      (Intercept)  29.85    5.463  
+    ##  Tube:block (Intercept)  73.07    8.548  
+    ##  block      (Intercept)   0.00    0.000  
+    ##  Residual               554.98   23.558  
+    ## Number of obs: 4888, groups:  depth, 44; Tube:block, 15; block, 8
+    ## 
+    ## Fixed effects:
+    ##                          Estimate Std. Error t value
+    ## (Intercept)            111.480201  24.911339   4.475
+    ## max_temp                -3.257799   0.939126  -3.469
+    ## avg_vwc                 -0.314534   0.298760  -1.053
+    ## wt_g                     0.010504   0.005513   1.905
+    ## compositionmixed       -12.205292   4.805896  -2.540
+    ## as.factor(month_num)5    6.555850   1.656163   3.958
+    ## as.factor(month_num)6   10.313382   2.629877   3.922
+    ## as.factor(month_num)7    9.984701   2.953195   3.381
+    ## as.factor(month_num)8   15.391821   2.894298   5.318
+    ## as.factor(month_num)9   14.282030   6.387240   2.236
+    ## as.factor(month_num)10  -1.402756   2.167041  -0.647
+    ## as.factor(month_num)11  -5.185289   2.165090  -2.395
+    ## 
+    ## Correlation of Fixed Effects:
+    ##             (Intr) mx_tmp avg_vw wt_g   cmpstn a.(_)5 a.(_)6 a.(_)7 a.(_)8
+    ## max_temp    -0.962                                                        
+    ## avg_vwc      0.020 -0.092                                                 
+    ## wt_g        -0.220 -0.005 -0.022                                          
+    ## compostnmxd -0.108  0.111  0.016 -0.347                                   
+    ## as.fctr(_)5  0.418 -0.480  0.369 -0.004 -0.046                            
+    ## as.fctr(_)6  0.706 -0.715 -0.404  0.015 -0.093  0.401                     
+    ## as.fctr(_)7  0.825 -0.880  0.210  0.002 -0.095  0.653  0.686              
+    ## as.fctr(_)8  0.836 -0.884  0.116  0.004 -0.098  0.629  0.737  0.890       
+    ## as.fctr(_)9  0.153 -0.096 -0.960  0.023 -0.036 -0.184  0.582  0.007  0.100
+    ## as.fct(_)10 -0.584  0.622 -0.525  0.008  0.056 -0.195 -0.060 -0.464 -0.419
+    ## as.fct(_)11 -0.679  0.710 -0.385  0.004  0.070 -0.189 -0.194 -0.522 -0.492
+    ##             a.(_)9 a.(_)10
+    ## max_temp                  
+    ## avg_vwc                   
+    ## wt_g                      
+    ## compostnmxd               
+    ## as.fctr(_)5               
+    ## as.fctr(_)6               
+    ## as.fctr(_)7               
+    ## as.fctr(_)8               
+    ## as.fctr(_)9               
+    ## as.fct(_)10  0.465        
+    ## as.fct(_)11  0.311  0.790 
+    ## optimizer (nloptwrap) convergence code: 0 (OK)
+    ## boundary (singular) fit: see ?isSingular
+
+    ##                 df       AIC
+    ## len_tot_mass_d1 10 44940.363
+    ## len_tot_mass_d2  9  5548.513
+    ## len_tot_mass_d3 16 44903.541
+
+![](production_turnover_files/figure-gfm/depth%20summed%20root%20length%20mass-11.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20summed%20root%20length%20mass-12.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20summed%20root%20length%20mass-13.png)<!-- -->
 
 #### Average root diameter
 
@@ -725,109 +1154,288 @@ is simply scalar the relationships should be the same.
 A negative but very small value relationship with avg LAI; no
 relationship with nearest LAI measurement.
 
+    ## Linear mixed model fit by REML ['lmerMod']
+    ## Formula: avg_diam_mm ~ min_temp + avg_vwc + wt_g + composition + (1 |  
+    ##     depth) + (1 | block/Tube) + (1 | month_num)
+    ##    Data: wt_data
+    ## 
+    ## REML criterion at convergence: -10163
+    ## 
+    ## Scaled residuals: 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -2.4510 -0.5997 -0.1567  0.4005  8.8785 
+    ## 
+    ## Random effects:
+    ##  Groups     Name        Variance  Std.Dev.
+    ##  depth      (Intercept) 0.0001251 0.01118 
+    ##  Tube:block (Intercept) 0.0002237 0.01496 
+    ##  block      (Intercept) 0.0002468 0.01571 
+    ##  month_num  (Intercept) 0.0001521 0.01233 
+    ##  Residual               0.0070774 0.08413 
+    ## Number of obs: 4888, groups:  depth, 44; Tube:block, 15; block, 8; month_num, 8
+    ## 
+    ## Fixed effects:
+    ##                    Estimate Std. Error t value
+    ## (Intercept)       2.908e-01  3.638e-02   7.994
+    ## min_temp         -6.046e-04  1.361e-03  -0.444
+    ## avg_vwc          -1.457e-04  5.550e-04  -0.263
+    ## wt_g             -9.809e-06  1.140e-05  -0.861
+    ## compositionmixed  3.973e-02  1.422e-02   2.794
+    ## 
+    ## Correlation of Fixed Effects:
+    ##             (Intr) mn_tmp avg_vw wt_g  
+    ## min_temp    -0.888                     
+    ## avg_vwc     -0.186  0.045              
+    ## wt_g        -0.318 -0.004  0.002       
+    ## compostnmxd -0.141  0.040  0.014 -0.233
+
+![](production_turnover_files/figure-gfm/depth%20avg%20root%20diam%20mass-1.png)<!-- -->
+
+    ## Linear mixed model fit by REML ['lmerMod']
+    ## Formula: avg_diam_mm ~ min_temp + avg_vwc + total_wt_g + composition +  
+    ##     (1 | depth) + (1 | block/Tube)
+    ##    Data: depth_model_data
+    ## 
+    ## REML criterion at convergence: -1024.4
+    ## 
+    ## Scaled residuals: 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -2.2037 -0.5757 -0.1429  0.4000  7.0190 
+    ## 
+    ## Random effects:
+    ##  Groups     Name        Variance  Std.Dev.
+    ##  depth      (Intercept) 0.0000000 0.00000 
+    ##  Tube:block (Intercept) 0.0002792 0.01671 
+    ##  block      (Intercept) 0.0011441 0.03382 
+    ##  Residual               0.0096744 0.09836 
+    ## Number of obs: 602, groups:  depth, 44; Tube:block, 15; block, 8
+    ## 
+    ## Fixed effects:
+    ##                    Estimate Std. Error t value
+    ## (Intercept)       1.2218595  0.3538346   3.453
+    ## min_temp         -0.0332613  0.0142793  -2.329
+    ## avg_vwc          -0.0099763  0.0051391  -1.941
+    ## total_wt_g       -0.0026256  0.0008486  -3.094
+    ## compositionmixed  0.0271733  0.0297569   0.913
+    ## 
+    ## Correlation of Fixed Effects:
+    ##             (Intr) mn_tmp avg_vw ttl_w_
+    ## min_temp    -0.992                     
+    ## avg_vwc     -0.111  0.008              
+    ## total_wt_g  -0.138  0.056  0.276       
+    ## compostnmxd -0.368  0.361 -0.098 -0.222
+    ## optimizer (nloptwrap) convergence code: 0 (OK)
+    ## boundary (singular) fit: see ?isSingular
+
+![](production_turnover_files/figure-gfm/depth%20avg%20root%20diam%20mass-2.png)<!-- -->
+
 <!-- #### Summed root diameter -->
 
-#### Average root volume
+#### Root volume
 
     ##               df      AIC
     ## volume_avg_d3 11 20960.03
     ## volume_avg_d2 11 20960.21
     ## volume_avg_d1 11 20960.25
 
-![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume-1.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume-2.png)<!-- -->
+<table style="border-collapse:collapse; border:none;">
+<tr>
+<th style="border-top: double; text-align:center; font-style:normal; font-weight:bold; padding:0.2cm;  text-align:left; ">
+ 
+</th>
+<th colspan="3" style="border-top: double; text-align:center; font-style:normal; font-weight:bold; padding:0.2cm; ">
+avg\_volume\_mm3
+</th>
+</tr>
+<tr>
+<td style=" text-align:center; border-bottom:1px solid; font-style:italic; font-weight:normal;  text-align:left; ">
+Predictors
+</td>
+<td style=" text-align:center; border-bottom:1px solid; font-style:italic; font-weight:normal;  ">
+Estimates
+</td>
+<td style=" text-align:center; border-bottom:1px solid; font-style:italic; font-weight:normal;  ">
+CI
+</td>
+<td style=" text-align:center; border-bottom:1px solid; font-style:italic; font-weight:normal;  ">
+p
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+(Intercept)
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.57
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.24 – 0.90
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+<strong>0.001</strong>
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+avg\_temp
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.01
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+-0.00 – 0.02
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.165
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+avg\_vwc
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.00
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+-0.00 – 0.00
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.534
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+clipped \[yes\]
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+-0.20
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+-0.40 – -0.01
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+<strong>0.043</strong>
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+composition \[mixed\]
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.16
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.00 – 0.32
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+<strong>0.045</strong>
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+clipped \[yes\] \* manureyes
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.13
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+-0.06 – 0.32
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.189
+</td>
+</tr>
+<tr>
+<td colspan="4" style="font-weight:bold; text-align:left; padding-top:.8em;">
+Random Effects
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+σ<sup>2</sup>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+0.94
+</td>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+τ<sub>00</sub> <sub>depth</sub>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+0.02
+</td>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+τ<sub>00</sub> <sub>Tube:block</sub>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+0.04
+</td>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+τ<sub>00</sub> <sub>block</sub>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+0.00
+</td>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+τ<sub>00</sub> <sub>month\_num</sub>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+0.00
+</td>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+N <sub>depth</sub>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+44
+</td>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+N <sub>Tube</sub>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+24
+</td>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+N <sub>block</sub>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+8
+</td>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+N <sub>month\_num</sub>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+8
+</td>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm; border-top:1px solid;">
+Observations
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left; border-top:1px solid;" colspan="3">
+7485
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+Marginal R<sup>2</sup> / Conditional R<sup>2</sup>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+0.014 / NA
+</td>
+</tr>
+</table>
 
-    ## Linear mixed model fit by REML ['lmerMod']
-    ## Formula: avg_volume_mm3 ~ avg_temp + avg_vwc + clipped + clipped:manure +  
-    ##     composition + (1 | depth) + (1 | block/Tube) + (1 | month_num)
-    ##    Data: depth_model_data
-    ## 
-    ## REML criterion at convergence: 20938
-    ## 
-    ## Scaled residuals: 
-    ##     Min      1Q  Median      3Q     Max 
-    ## -1.3895 -0.5118 -0.2543  0.1668 16.6829 
-    ## 
-    ## Random effects:
-    ##  Groups     Name        Variance Std.Dev.
-    ##  depth      (Intercept) 0.016613 0.12889 
-    ##  Tube:block (Intercept) 0.036425 0.19085 
-    ##  block      (Intercept) 0.000000 0.00000 
-    ##  month_num  (Intercept) 0.000273 0.01652 
-    ##  Residual               0.941258 0.97018 
-    ## Number of obs: 7485, groups:  depth, 44; Tube:block, 24; block, 8; month_num, 8
-    ## 
-    ## Fixed effects:
-    ##                       Estimate Std. Error t value
-    ## (Intercept)           0.574161   0.168182   3.414
-    ## avg_temp              0.008134   0.005853   1.390
-    ## avg_vwc               0.001119   0.001797   0.622
-    ## clippedyes           -0.201077   0.099483  -2.021
-    ## compositionmixed      0.163078   0.081179   2.009
-    ## clippedyes:manureyes  0.130264   0.099197   1.313
-    ## 
-    ## Correlation of Fixed Effects:
-    ##             (Intr) avg_tm avg_vw clppdy cmpstn
-    ## avg_temp    -0.861                            
-    ## avg_vwc     -0.072 -0.036                     
-    ## clippedyes  -0.282 -0.019  0.013              
-    ## compostnmxd -0.273  0.037 -0.006 -0.001       
-    ## clppdys:mnr  0.002 -0.001 -0.013 -0.499  0.001
-    ## fit warnings:
-    ## fixed-effect model matrix is rank deficient so dropping 1 column / coefficient
-    ## optimizer (nloptwrap) convergence code: 0 (OK)
-    ## boundary (singular) fit: see ?isSingular
-
-![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume-3.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume-4.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume-5.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume-6.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume-7.png)<!-- -->
-
-    ## Linear mixed model fit by REML ['lmerMod']
-    ## Formula: 
-    ## avg_volume_mm3 ~ std2_avg_temp + std2_avg_vwc + clipped + clipped:manure +  
-    ##     composition + (1 | depth) + (1 | block/Tube) + (1 | month_num)
-    ##    Data: depth_model_data
-    ## 
-    ## REML criterion at convergence: 20929.8
-    ## 
-    ## Scaled residuals: 
-    ##     Min      1Q  Median      3Q     Max 
-    ## -1.3895 -0.5118 -0.2543  0.1668 16.6829 
-    ## 
-    ## Random effects:
-    ##  Groups     Name        Variance Std.Dev.
-    ##  depth      (Intercept) 0.016613 0.12889 
-    ##  Tube:block (Intercept) 0.036425 0.19085 
-    ##  block      (Intercept) 0.000000 0.00000 
-    ##  month_num  (Intercept) 0.000273 0.01652 
-    ##  Residual               0.941258 0.97018 
-    ## Number of obs: 7485, groups:  depth, 44; Tube:block, 24; block, 8; month_num, 8
-    ## 
-    ## Fixed effects:
-    ##                      Estimate Std. Error t value
-    ## (Intercept)           0.78669    0.08383   9.384
-    ## std2_avg_temp         0.03576    0.02573   1.390
-    ## std2_avg_vwc          0.01593    0.02559   0.622
-    ## clippedyes           -0.20108    0.09948  -2.021
-    ## compositionmixed      0.16308    0.08118   2.009
-    ## clippedyes:manureyes  0.13026    0.09920   1.313
-    ## 
-    ## Correlation of Fixed Effects:
-    ##             (Intr) std2_vg_t std2_vg_v clppdy cmpstn
-    ## std2_vg_tmp -0.002                                  
-    ## std2_vg_vwc -0.002 -0.036                           
-    ## clippedyes  -0.596 -0.019     0.013                 
-    ## compostnmxd -0.484  0.037    -0.006    -0.001       
-    ## clppdys:mnr -0.001 -0.001    -0.013    -0.499  0.001
-    ## fit warnings:
-    ## fixed-effect model matrix is rank deficient so dropping 1 column / coefficient
-    ## optimizer (nloptwrap) convergence code: 0 (OK)
-    ## boundary (singular) fit: see ?isSingular
-
-![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume-8.png)<!-- -->
+![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume%20models-1.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume%20models-2.png)<!-- -->
 
 Lower average volume in clipped but higher average volume in mixed
 composition. The mean point estimate for simulated grazing is solidly on
 the positive side.
-
-#### Average root volume model with LAI
 
 ![](production_turnover_files/figure-gfm/depth%20avg%20root%20volume%20with%20LAI-1.png)<!-- -->
 
@@ -911,74 +1519,112 @@ the positive side.
 
 No effect of average or nearest LAI.
 
-#### Summed root volume
-
     ##               df      AIC
     ## volume_tot_d3 11 41587.67
     ## volume_tot_d2 11 41588.69
     ## volume_tot_d1 11 41589.21
 
-![](production_turnover_files/figure-gfm/depth%20summed%20root%20volume-1.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20summed%20root%20volume-2.png)<!-- -->
+![](production_turnover_files/figure-gfm/depth%20total%20root%20volume-1.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20total%20root%20volume-2.png)<!-- -->
 
     ## Linear mixed model fit by REML ['lmerMod']
-    ## Formula: tot_volume_mm3 ~ avg_temp + avg_vwc + clipped + clipped:manure +  
+    ## Formula: log(tot_volume_mm3) ~ avg_temp + avg_vwc + clipped + clipped:manure +  
     ##     composition + (1 | depth) + (1 | block/Tube) + (1 | month_num)
     ##    Data: depth_model_data
     ## 
-    ## REML criterion at convergence: 41565.7
+    ## REML criterion at convergence: 24806.4
     ## 
     ## Scaled residuals: 
     ##     Min      1Q  Median      3Q     Max 
-    ## -2.3792 -0.5925 -0.2585  0.3385  9.1966 
+    ## -4.9605 -0.5271  0.1381  0.6769  2.6388 
     ## 
     ## Random effects:
-    ##  Groups     Name        Variance Std.Dev.
-    ##  depth      (Intercept)  0.46396 0.6811  
-    ##  Tube:block (Intercept)  1.48775 1.2197  
-    ##  block      (Intercept)  0.69871 0.8359  
-    ##  month_num  (Intercept)  0.03405 0.1845  
-    ##  Residual               14.74861 3.8404  
+    ##  Groups     Name        Variance  Std.Dev.
+    ##  depth      (Intercept) 0.0729694 0.2701  
+    ##  Tube:block (Intercept) 0.1571360 0.3964  
+    ##  block      (Intercept) 0.0606892 0.2464  
+    ##  month_num  (Intercept) 0.0009863 0.0314  
+    ##  Residual               1.5666194 1.2516  
     ## Number of obs: 7485, groups:  depth, 44; Tube:block, 24; block, 8; month_num, 8
     ## 
     ## Fixed effects:
-    ##                       Estimate Std. Error t value
-    ## (Intercept)           2.272230   1.121826   2.025
-    ## avg_temp              0.082044   0.036168   2.268
-    ## avg_vwc               0.005712   0.011016   0.519
-    ## clippedyes           -1.265426   0.620029  -2.041
-    ## compositionmixed     -0.108201   0.778265  -0.139
-    ## clippedyes:manureyes  0.652144   0.619247   1.053
+    ##                        Estimate Std. Error t value
+    ## (Intercept)          -0.2004811  0.2970319  -0.675
+    ## avg_temp              0.0342665  0.0084374   4.061
+    ## avg_vwc               0.0003726  0.0025878   0.144
+    ## clippedyes           -0.2127940  0.2015024  -1.056
+    ## compositionmixed      0.0739969  0.2395905   0.309
+    ## clippedyes:manureyes  0.2315440  0.2012618   1.150
     ## 
     ## Correlation of Fixed Effects:
     ##             (Intr) avg_tm avg_vw clppdy cmpstn
-    ## avg_temp    -0.798                            
-    ## avg_vwc     -0.068 -0.032                     
-    ## clippedyes  -0.263 -0.018  0.011              
-    ## compostnmxd -0.366  0.025 -0.004 -0.001       
-    ## clppdys:mnr  0.002 -0.002 -0.011 -0.500  0.000
+    ## avg_temp    -0.703                            
+    ## avg_vwc     -0.059 -0.036                     
+    ## clippedyes  -0.331 -0.013  0.009              
+    ## compostnmxd -0.416  0.018 -0.003  0.000       
+    ## clppdys:mnr  0.001 -0.001 -0.009 -0.500  0.000
     ## fit warnings:
     ## fixed-effect model matrix is rank deficient so dropping 1 column / coefficient
 
-![](production_turnover_files/figure-gfm/depth%20summed%20root%20volume-3.png)<!-- -->
+![](production_turnover_files/figure-gfm/depth%20total%20root%20volume-3.png)<!-- -->
+
+    ## Error: Confidence intervals could not be computed.
+    ## * Reason: "non-conformable arguments"
+    ## * Source: mm %*% vcm
+    ## Error: Confidence intervals could not be computed.
+    ## * Reason: "non-conformable arguments"
+    ## * Source: mm %*% vcm
+    ## Error: Confidence intervals could not be computed.
+    ## * Reason: "non-conformable arguments"
+    ## * Source: mm %*% vcm
+    ## Error: Confidence intervals could not be computed.
+    ## * Reason: "non-conformable arguments"
+    ## * Source: mm %*% vcm
+    ## Error: Confidence intervals could not be computed.
+    ## * Reason: "non-conformable arguments"
+    ## * Source: mm %*% vcm
+
+    ## $avg_temp
+
+![](production_turnover_files/figure-gfm/depth%20total%20root%20volume-4.png)<!-- -->
+
+    ## 
+    ## $avg_vwc
+
+![](production_turnover_files/figure-gfm/depth%20total%20root%20volume-5.png)<!-- -->
+
+    ## 
+    ## $clipped
+
+![](production_turnover_files/figure-gfm/depth%20total%20root%20volume-6.png)<!-- -->
+
+    ## 
+    ## $manure
+
+![](production_turnover_files/figure-gfm/depth%20total%20root%20volume-7.png)<!-- -->
+
+    ## 
+    ## $composition
+
+![](production_turnover_files/figure-gfm/depth%20total%20root%20volume-8.png)<!-- -->
 
     ## [[1]]
 
-![](production_turnover_files/figure-gfm/depth%20summed%20root%20volume-4.png)<!-- -->
+![](production_turnover_files/figure-gfm/depth%20total%20root%20volume-9.png)<!-- -->
 
     ## 
     ## [[2]]
 
-![](production_turnover_files/figure-gfm/depth%20summed%20root%20volume-5.png)<!-- -->
+![](production_turnover_files/figure-gfm/depth%20total%20root%20volume-10.png)<!-- -->
 
     ## 
     ## [[3]]
 
-![](production_turnover_files/figure-gfm/depth%20summed%20root%20volume-6.png)<!-- -->
+![](production_turnover_files/figure-gfm/depth%20total%20root%20volume-11.png)<!-- -->
 
     ## 
     ## [[4]]
 
-![](production_turnover_files/figure-gfm/depth%20summed%20root%20volume-7.png)<!-- -->
+![](production_turnover_files/figure-gfm/depth%20total%20root%20volume-12.png)<!-- -->
 
     ## Linear mixed model fit by REML ['lmerMod']
     ## Formula: tot_volume_mm3 ~ avg_temp + avg_vwc + avg_lai + composition +  
@@ -1017,7 +1663,7 @@ No effect of average or nearest LAI.
     ## optimizer (nloptwrap) convergence code: 0 (OK)
     ## boundary (singular) fit: see ?isSingular
 
-![](production_turnover_files/figure-gfm/depth%20summed%20root%20volume-8.png)<!-- -->![](production_turnover_files/figure-gfm/depth%20summed%20root%20volume-9.png)<!-- -->
+![](production_turnover_files/figure-gfm/summed%20volume%20lai%20model-1.png)<!-- -->![](production_turnover_files/figure-gfm/summed%20volume%20lai%20model-2.png)<!-- -->
 
     ## Linear mixed model fit by REML ['lmerMod']
     ## Formula: tot_volume_mm3 ~ avg_temp + avg_vwc + LAI + composition + (1 |  
@@ -1054,14 +1700,15 @@ No effect of average or nearest LAI.
     ## LAI          0.017 -0.048 -0.006       
     ## compostnmxd -0.199  0.124  0.016 -0.075
 
-![](production_turnover_files/figure-gfm/depth%20summed%20root%20volume-10.png)<!-- -->
+![](production_turnover_files/figure-gfm/summed%20volume%20lai%20model-3.png)<!-- -->
 
 Negative relationship between average LAI and total root volume; no
 relationship with nearest LAI value.
 
 <!-- Next step: Total root volume/length to nearest LAI acquisition date -  -->
 
-Potential lag between LAI measurement to root production, or vice versa.
+Potential lag between LAI measurement to root production, or vice
+versa??
 
 ### Models for roots aggregated to tubes
 
