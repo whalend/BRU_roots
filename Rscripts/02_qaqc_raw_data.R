@@ -120,7 +120,7 @@ unique(names(qaqc_data)%in%names(qaqc_data2))
 corrections2 <- qaqc_data2 %>% 
   filter(flag == "replace")
 
-qaqc_data = qaqc_data %>% 
+qaqc_data <- qaqc_data %>% 
   rename(flag = note, 
          AvgDiam_mm = AvgDiam_cm,
          TotAvgDiam_mm = TotAvgDiam_cm) %>% 
